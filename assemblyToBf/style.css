@@ -1,0 +1,15 @@
+#mainTable {
+    width: 90vw;
+    height: 70vh;
+}
+
+#mainTable td {
+    position: relative;
+    vertical-align: top;
+}
+
+textarea {
+    position: absolute;
+    width: 95%;
+    height: 95%;
+}

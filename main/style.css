@@ -1,0 +1,36 @@
+body {
+    margin: 0px;
+    padding: 0px;
+    width: 100vw;
+    height: 100vh
+}
+
+.terminal {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    position: relative;
+}
+
+.terminalText {
+    color: #00ff00;
+    background-color: black;
+    width: 99%;
+    font-size: 14px;
+    margin: 0;
+    margin-left: 1%;
+    overflow-wrap: break-word;
+    padding: 0;
+    border: none;
+    outline: none;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre-wrap;
+}
+
+.terminalInput {
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+}

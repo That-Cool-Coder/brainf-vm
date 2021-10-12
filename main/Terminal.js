@@ -1,14 +1,44 @@
 class Terminal {
-    constructor(virtualMachine=null, parentElem=document.body) {
+    /* This terminal prints only ASCII characters
+
+    Here's an overiew of some control characters used when printing:
+    0: null char, does nothing and doesn't move cursor
+    2: start of text, moves cursor to top left
+    4: end of transmission, clears screen
+    7: bell char, planned: make bell noise
+    10: newline, moves cursor down one line (not changing column)
+    13: carriage return, moves cursor to the start of current line
+    17: device control 1, moves cursor to left
+    18: device control 2, moves cursor to right
+    19: device control 3, moves cursor up one line
+    20: device control 4, moves cursor down one line
+
+    Here's an overview of key code conversion used when taking input:
+    Left arrow key: 17
+    Right arrow key: 18
+    Up arrow key: 19
+    Down arrow key: 20
+    */
+
+    keyCodeToArrowKey = {
+        37 : 17,
+        39 : 18,
+        38 : 19,
+        40 : 20
+    }
+
+    constructor(parentElem=document.body, size=spnr.v(80, 30)) {
         this.parentElem = parentElem;
-        this.virtualMachine = virtualMachine;
+        this.size = spnr.v.copy(size);
 
         this.setupElements();
 
         this.isRunningCode = false;
-
         this.inputHistory = [];
         this.historyIndexFromEnd = 0;
+        this.cursorPos = spnr.v(0, 0);
+
+        this.clear();
     }
 
     setupElements() {
@@ -28,6 +58,7 @@ class Terminal {
         this.mainDiv.appendChild(this.inputBox);
         this.inputBox.focus();
 
+        // Keyboard shortcut listener
         this.mainDiv.addEventListener("keyup", e => {
             if (! this.isRunningCode) {
                 // If it is enter key, submit
@@ -38,28 +69,44 @@ class Terminal {
                 if (e.keyCode == 40) this.nextHistoryItem();
             }
         });
+
+        // Focus the writing area when clicked
+        // and copy text from output area when mouse dragged over
+        this.mainDiv.addEventListener('click', e => {
+            var selection = '';
+            if (window.getSelection) {
+                selection = window.getSelection().toString();
+            } else if (document.selection && document.selection.type != "Control") {
+                selection = document.selection.createRange().text;
+            }
+            selection = this._removeExtraWhitespace(selection);
+
+            if (selection != '' && selection != ' ') {
+                var elem = document.createElement('textarea');
+                document.body.appendChild(elem);
+                elem.value = selection;
+                elem.select();
+                document.execCommand('copy');
+                document.body.removeChild(elem);
+            }
+
+            this.inputBox.focus();
+        })
+    }
+
+    clear() {
+        var spaces = ' '.repeat(this.size.x);
+        this.content = new Array(this.size.y).fill(spaces);
+        this._updateOutputHolder();
     }
 
     linkVirtualMachine(machine) {
         this.virtualMachine = machine;
     }
 
-    waitForKeypress() {
-        return new Promise((resolve) => {
-            // Use an arrow function here so that scope is correct
-            // also so that we can delete it afterwards
-            var onKeyHandler = e => {
-                this.mainDiv.removeEventListener('keypress', onKeyHandler);
-                resolve(e.keyCode);
-                e.preventDefault();
-            }
-            this.mainDiv.focus();
-            this.mainDiv.addEventListener('keypress', onKeyHandler);
-        });
-    }
-
     async getChar() {
-        var keyCode = await this.waitForKeypress();
+        var keyCode = await this._waitForKeypress();
+        if (keyCode in this.keyCodeToArrowKey) keyCode = this.keyCodeToArrowKey[keyCode];
         return keyCode;
     }
 
@@ -69,7 +116,7 @@ class Terminal {
 
             var command = this.inputBox.value;
             this.inputBox.value = '';
-            this.write(command + '\n');
+            this.write(command + '\r\n');
             this.historyIndexFromEnd = 0;
             this.inputHistory.push(command);
             await this.virtualMachine.run(command);
@@ -81,8 +128,83 @@ class Terminal {
         }
     }
 
+    get contentUnderCursor() {
+        return this.content[this.cursorPos.y][this.cursorPos.x];
+    }
+
+    set contentUnderCursor(value) {
+        var crntLine = this.content[this.cursorPos.y];
+        var newString = crntLine.slice(0, this.cursorPos.x) +
+            value + crntLine.slice(this.cursorPos.x + 1);
+        this.content[this.cursorPos.y] = newString;
+    }
+
+    scrollDown(distance) {
+        // Scroll terminal down by distance deleting lines that are offscreen
+        for (var i = 0; i < distance; i ++) {
+            var crntLine = this.content.shift();
+            crntLine = ' '.repeat(this.size.x);
+            this.content.push(crntLine);
+        }
+    }
+
     write(data) {
-        this.outputHolder.innerText += data;
+
+        // Todo: check for escape codes and move the cursor accordingly
+
+        for (var charIdx = 0; charIdx < data.length; charIdx ++) {
+            var crntChar = data[charIdx];
+            switch(crntChar) {
+                case '\n':
+                    this.cursorPos.y ++;
+                    break;
+                case '\r':
+                    this.cursorPos.x = 0;
+                    break;
+                case '\0':
+                    // Do nothing
+                    break;
+                case String.fromCharCode(2):
+                    this.cursorPos.x = 0;
+                    this.cursorPos.y = 0;
+                    break;
+                case String.fromCharCode(4):
+                    this.cursorPos.x = 0;
+                    this.cursorPos.y = 0;
+                    this.clear();
+                    break;
+                case String.fromCharCode(17):
+                    this.cursorPos.x --;
+                    break;
+                case String.fromCharCode(18):
+                    this.cursorPos.x ++;
+                    break;
+                case String.fromCharCode(19):
+                    this.cursorPos.y --;
+                    break;
+                case String.fromCharCode(20):
+                    this.cursorPos.y ++;
+                    break;
+                default:
+                    this.contentUnderCursor = crntChar;
+                    this.cursorPos.x ++;
+                    break;
+
+            }
+            if (this.cursorPos.x < 0) {
+                this.cursorPos.x = 0;
+            }
+            if (this.cursorPos.x >= this.size.x) {
+                this.cursorPos.x = 0;
+                this.cursorPos.y ++;
+            }
+            if (this.cursorPos.y >= this.size.y) {
+                this.cursorPos.y --;
+                this.scrollDown(1);
+            }
+        }
+
+        this._updateOutputHolder();
     }
 
     previousHistoryItem() {
@@ -107,5 +229,47 @@ class Terminal {
             this.inputBox.value = this.inputHistory[this.inputHistory.length -
                 this.historyIndexFromEnd];
         }
+    }
+
+    _removeExtraWhitespace(text) {
+        text = text.replace(/\r/g, ''); // remove carriage returns
+        var lines = text.split('\n');
+        var trimmedLines = [];
+
+        // First, trim trailing spaces
+        lines.forEach(line => {
+            while (line[line.length - 1] == ' ') {
+                line = line.slice(0, line.length - 2); // of course String.pop() doesn't exist :(
+            }
+            trimmedLines.push(line);
+        });
+
+        // Then trim trailing empty lines
+        if (trimmedLines.length > 0) {
+            while (trimmedLines[trimmedLines.length - 1].length == 0) {
+                trimmedLines.pop();
+                if (trimmedLines.length == 0) break;
+            }
+        }
+
+        return trimmedLines.join('\n');
+    }
+
+    _waitForKeypress() {
+        return new Promise((resolve) => {
+            // Use an arrow function here so that scope is correct
+            // also so that we can delete it afterwards
+            var onKeyHandler = e => {
+                this.mainDiv.removeEventListener('keydown', onKeyHandler);
+                resolve(e.keyCode);
+                e.preventDefault();
+            }
+            this.mainDiv.focus();
+            this.mainDiv.addEventListener('keydown', onKeyHandler);
+        });
+    }
+
+    _updateOutputHolder() {
+        this.outputHolder.innerText = this.content.join('\n');
     }
 }

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>BrainF Virtual Machine</title>
+        <meta charset="utf-8">
+    </head>
+    <body>
+        <h1>Lazy Home Page for BrainF virtual machine</h1>
+        <p>I am too lazy to make a proper home page so here is some info and links</p>
+        <p>This site is my project to create a virtual computer in JavaScript using BrainF</p>
+        <p>Currently, I'm writing a converter of assembly to BrainF in JavaScript</p>
+
+        <a href="main">Main virtual machine</a><br>
+        <a href="assemblyToBf">Assembly compiler</a><br>
+        <a href="http://www.asciitable.com/">Ascii codes (handy for BrainF-ing)</a><br>
+        <a href="https://replit.com/@ThatCoolCoder/vm#index.html">Shortcut to repl editor</a><br>
+        <button onclick="openAllLinks()">Open all</button>
+
+        <script>
+            function openAllLinks() {
+                var links = [...document.getElementsByTagName('a')];
+                links.forEach(link => {
+                    window.open(link);
+                });
+            }
+        </script>
+    </body>

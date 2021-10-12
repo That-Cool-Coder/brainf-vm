@@ -8,11 +8,15 @@
 
     <body>
         <h1>Assembly to BrainF (using JavaScript)</h1>
-        <button onclick="compile()">Compile</button>
         
+        <button onclick="compile()">Compile</button>
         <label for="debugCheckbox">Debug mode</label>
         <input id="debugCheckbox" type="checkbox">
-            <button onclick="copyBrainF()">Copy output</button>
+        <button onclick="copyBrainF()">Copy output</button>
+        <select id="projectSelector" onchange="tryLoadSelectedProject()"></select>
+        <button onclick="createNewProject()">Create new project</button>
+        <button onclick="tryDeleteCrntProject()">Delete this project</button>
+
         <table id="mainTable">
             <tr>
                 <td>
@@ -25,7 +29,7 @@
         </table>
     </body>
 
-    <script src="/wrk.js"></script>
+    <script src="https://unpkg.com/spnr/cdn/latest/spnr.min.js"></script>
     <script src="assemblyToBf.js"></script>
     <script src="script.js"></script>
 </html>

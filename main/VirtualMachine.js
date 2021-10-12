@@ -15,9 +15,12 @@ class VirtualMachine {
 
         this.crntProgram = null;
         this.programIndex = 0;
+        this.hasCrashed = false;
         this.memPointer = 0;
+        
         this.debugSymbol = '*'; // if this symbol is found in the bf, then dump memory to terminal
         this.clearMemorySymbol = '$'; // if this symbol is found in the bf, then clear memory
+        this.crashMessage = 'Virtual machine crashed during execution. Check that it has enough memory.';
     }
 
     saveMemory() {
@@ -40,18 +43,19 @@ class VirtualMachine {
     async run(program) {
         this.crntProgram = program;
         this.programIndex = 0;
+        this.hasCrashed = false;
 
         this.inputBuffer = ''; // thing to hold input
 
-        while (this.programIndex < this.crntProgram.length) {
+        while (this.programIndex < this.crntProgram.length && ! this.hasCrashed) {
             switch(this.crntProgram[this.programIndex]) {
                 case '<':
                     this.memPointer --;
-                    if (this.memoryPointer < 0) this.memPointer += this.memory.length;
+                    if (this.memoryPointer < 0) this.hasCrashed = true;
                     break;
                 case '>':
                     this.memPointer ++;
-                    if (this.memoryPointer >= this.memory.length) this.memPointer = 0;
+                    if (this.memoryPointer >= this.memory.length) this.hasCrashed = true;
                     break;
                 case '-':
                     this.memory[this.memPointer] --;
@@ -76,7 +80,7 @@ class VirtualMachine {
                     break;
                 case this.debugSymbol:
                     this.putTextFunc(
-                        `Mem pointer: ${this.memPointer} Memory: ${this.memory.toString()}\n`);
+                        `Mem pointer: ${this.memPointer} Memory: ${this.memory.toString()}\r\n`);
                     break;
                 case this.clearMemorySymbol:
                     this.memory.fill(0);
@@ -85,6 +89,9 @@ class VirtualMachine {
                 
             }
             this.programIndex ++;
+        }
+        if (this.hasCrashed) {
+            this.putTextFunc(this.crashMessage);
         }
         if (this.autosaveMemory) {
             this.saveMemory();

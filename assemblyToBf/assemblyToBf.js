@@ -1,5 +1,6 @@
+// Increment the first memory tag and move to the next cell to prepare for mem init
 const precompiledHeader = `
-->>
++>>
 `;
 
 /*
@@ -54,8 +55,9 @@ These are the valid labels:
 // This class is coded somewhat weirdly because...
 // ...I'm trying to code it similarly to how I would code it in assembly
 class AssemblyToBf {
-    static internalCounters = [
-        2 // memory indexes of the internal counters (add more if needed)
+    // memory indexes of the internal counters (add more if needed)
+    static tempMemory = [
+        2, 4, 6
     ];
 
     // A list of private internal compiler functions that have unique arguments
@@ -66,7 +68,7 @@ class AssemblyToBf {
         },
         pts : debugMode => {
             // pointer to start
-            var code = '+[-<<+]-';
+            var code = '-[+<<-]+';
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
@@ -89,6 +91,10 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
+
+        // Maths
+        // -----
+
         inc : (memAddr, memPointers, debugMode) => {
             // increment item at memAddr
             var code = '';
@@ -105,6 +111,84 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
+        add : (fromAddr, toAddr, tempAddr, memPointers, debugMode) => {
+            // Add fromAddr to toAddr (changing toAddr)
+            // How this works: first move value to tempAddr
+            // AND toAddr simulanously (deleting value in fromAddr).
+            // Then move value from tempAddr to toAddr, restoring
+
+            // Shortcut
+            var mpt = t => this.internCompileFuncs.mpt(t, memPointers, debugMode);
+
+            var code = '';
+
+            // First make destination empty
+            code += this.internCompileFuncs.zer(tempAddr, memPointers, debugMode);
+
+            // Then, while value of fromAddr is > 0, increment toAddr/internalCounter and decrement fromAddr
+            code += `${mpt(fromAddr)}>[-<${mpt(toAddr)}>+<${mpt(tempAddr)}>+<${mpt(fromAddr)}>]<`;
+
+            // Then move value from temp storage to fromAddr, restoring it
+            code += this.internCompileFuncs.mv(tempAddr, fromAddr, memPointers, debugMode);
+
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        sub : (fromAddr, toAddr, tempAddr, memPointers, debugMode) => {
+            // Subtract fromAddr from toAddr (changing toAddr)
+            // How this works: first move value to an tempAddr
+            // AND toAddr simulanously (deleting value in fromAddr).
+            // Then move value from tempAddr to toAddr, restoring
+
+            // Shortcut
+            var mpt = t => this.internCompileFuncs.mpt(t, memPointers, debugMode);
+
+            var code = '';
+
+            // First make destination empty
+            code += this.internCompileFuncs.zer(tempAddr, memPointers, debugMode);
+
+            // Then, while value of fromAddr is > 0, increment internalCounter
+            // and decrement fromAddr/toAddr
+            code += `${mpt(fromAddr)}>[-<${mpt(toAddr)}>-<${mpt(tempAddr)}>+<${mpt(fromAddr)}>]<`;
+
+            // Then move value from temp storage to fromAddr, restoring it
+            code += this.internCompileFuncs.mv(tempAddr, fromAddr, memPointers, debugMode);
+
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        mult : (fromAddr, toAddr, tempAddr1, tempAddr2, memPointers, debugMode) => {
+            // Multiply the value of toAddr by fromAddr, modifying toAddr
+            // How this works: Use tempAddr1 to keep track of how many times to add fromAddr.
+            // tempAddr2 is used as a true temp address and doesn't do anything but help the internals
+
+            // Shortcut
+            var mpt = t => this.internCompileFuncs.mpt(t, memPointers, debugMode);
+
+            var code = '';
+            
+            // Setup a counter for times to add
+            code += this.internCompileFuncs.zer(toAddr, memPointers, debugMode);
+
+            // Clear the target address
+            code += this.internCompileFuncs.cpy(fromAddr, toAddr, tempAddr2, memPointers, debugMode);
+
+            // Move to tempAddr1 to init loop
+            code += `${mpt(tempAddr1)}>[<`;
+
+            code += this.internCompileFuncs.add(fromAddr, toAddr, tempAddr2, memPointers, debugMode);
+
+            // Decrement loop counter and end loop
+            code += `${mpt(tempAddr1)}>-]<`;
+            
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+
+        // Memory manipulation
+        // -------------------
+
         zer : (memAddr, memPointers, debugMode) => {
             // Set item at memAddr to 0
             var code = '';
@@ -122,11 +206,12 @@ class AssemblyToBf {
             return code;
         },
         mv : (fromAddr, toAddr, memPointers, debugMode) => {
-            // Move the value from fromAddr to toAddr
-            var code = '';
+            // Move the value from fromAddr to toAddr and leave fromAddr at zero
 
             // Shortcut
             var mpt = t => this.internCompileFuncs.mpt(t, memPointers, debugMode);
+
+            var code = '';
 
             // First make destination empty
             code += this.internCompileFuncs.zer(toAddr, memPointers, debugMode);
@@ -137,17 +222,16 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
-        cpy : (fromAddr, toAddr, memPointers, debugMode) => {
+        cpy : (fromAddr, toAddr, tempAddr, memPointers, debugMode) => {
             // Copy the value from fromAddr to toAddr
-            // How this works: first move value to an internal holder
+            // How this works: first move value to tempAddr
             // AND toAddr simulanously (deleting value in fromAddr).
-            // Then move value from internal holder to toAddr, restoring
-
-            var code = '';
-            var tempAddr = this.internalCounters[0];
+            // Then move value from tempAddr to toAddr, restoring
 
             // Shortcut
             var mpt = t => this.internCompileFuncs.mpt(t, memPointers, debugMode);
+
+            var code = '';
 
             // First make destinations empty
             code += this.internCompileFuncs.zer(toAddr, memPointers, debugMode);
@@ -162,6 +246,18 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
+        set : (memAddr, value, memPointers, debugMode) => {
+            // Set the item at memAddr to value
+            var code = '';
+            code += this.internCompileFuncs.zer(memAddr, memPointers, debugMode);
+            code += '>' + '+'.repeat(value) + '<';
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+
+        // Input/output stuff:
+        // -------------------
+
         out : (memAddr, memPointers, debugMode) => {
             // output a single char at memAddr
             // planned: add an offset
@@ -180,6 +276,20 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
+        outr : (value, debugMode) => {
+            // Output a raw value as an ascii code
+            var code = this.internCompileFuncs.zer(this.tempMemory[0], {}, debugMode);
+            code += `>${'+'.repeat(value)}.<`;
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        lbr : (debugMode) => {
+            // Line break. Output a newline and a carriage return
+            code += this.internCompileFuncs.outr(13, false);
+            code += this.internCompileFuncs.outr(10, false);
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
         ich : (memAddr, memPointers, debugMode) => {
             // Get a character input and write it to memAddr
             var code = '';
@@ -188,7 +298,7 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
-        ili : (memAddr, memPointers, debugMode) => {
+        iln : (memAddr, memPointers, debugMode) => {
             // Get a line and write it to string or arr starting at memAddr
             // (bad things will happen when the line is longer than the string)
 
@@ -205,11 +315,49 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
-        st : (memAddr, value, memPointers, debugMode) => {
-            // Set the item at memAddr to value
+
+        // Control structures
+        // ------------------
+
+        luz : (memAddr, memPointers, debugMode) => {
+            // Start of a loop - loop until value at memAddr is zero
             var code = '';
-            code += this.internCompileFuncs.zer(memAddr, memPointers, debugMode);
-            code += '>' + '+'.repeat(value) + '<';
+            code += this.internCompileFuncs.mpt(memAddr);
+            code += '>[<';
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        eluz : (memAddr, memPointers, debugMode) => {
+            // End a loop-until-zero
+            var code = '';
+            code += this.internCompileFuncs.mpt(memAddr);
+            code += '>]<';
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        ifz : (memAddr, tempAddr1, tempAddr2, memPointers, debugMode) => {
+            // If memAddr is 0, run the code between here and eifz
+            // Alg based off https://esolangs.org/wiki/Brainfuck_algorithms#if_.28x.29_.7B_code1_.7D_else_.7B_code2_.7D
+
+            // Shortcut
+            var mpt = t => this.internCompileFuncs.mpt(t, memPointers, debugMode);
+
+            var code = '';
+            code += this.internCompileFuncs.zer(tempAddr1, memPointers, debugMode);
+            code += '>+<';
+            code += this.internCompileFuncs.zer(tempAddr2, memPointers, debugMode);
+            code += `${mpt(memAddr)}>[<${mpt(tempAddr1)}>-<${mpt(memAddr)}>[<${mpt(tempAddr2)}>+<${mpt(memAddr)}>-]]<`;
+            code += `${mpt(tempAddr2)}>[<${mpt(memAddr)}>+<${mpt(tempAddr2)}>-]<`;
+            code += `${mpt(tempAddr1)}>[<`;
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        eifz : (memAddr, tempAddr1, tempAddr2, memPointers, debugMode) => {
+            // End of ifz
+
+            var code = '';
+            code += this.internCompileFuncs.mpt(tempAddr1);
+            code += '>-]<';
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         }
@@ -229,6 +377,10 @@ class AssemblyToBf {
             var brainF = tokens.slice(1).join(' ');
             return this.internCompileFuncs.bf(brainF, debugMode);
         },
+
+        // Maths
+        // -----
+
         inc : (tokens, memPointers, debugMode) => {
             // Increment token1
             return this.internCompileFuncs.inc(tokens[1], memPointers, debugMode);
@@ -237,6 +389,22 @@ class AssemblyToBf {
             // Decrement token1
             return this.internCompileFuncs.dec(tokens[1], memPointers, debugMode);
         },
+        add : (tokens, memPointers, debugMode) => {
+            // Add the value of token1 to token2, changing token2
+            return this.internCompileFuncs.add(tokens[1], tokens[2], this.tempMemory[0], memPointers, debugMode);
+        },
+        sub : (tokens, memPointers, debugMode) => {
+            // Subtract the value of token1 to token2, changing token2
+            return this.internCompileFuncs.sub(tokens[1], tokens[2], this.tempMemory[0], memPointers, debugMode);
+        },
+        mult : (tokens, memPointers, debugMode) => {
+            // Multiply token1 by token2, changing token2
+            return this.internCompileFuncs.mult(tokens[1], tokens[2], this.tempMemory[0], this.tempMemory[1], memPointers, debugMode)
+        },
+        
+        // Memory management
+        // -----------------
+
         zer : (tokens, memPointers, debugMode) => {
             // Set token1 to 0
             return this.internCompileFuncs.zer(tokens[1], memPointers, debugMode);
@@ -252,8 +420,30 @@ class AssemblyToBf {
         },
         cpy : (tokens, memPointers, debugMode) => {
             // Copy value from token1 to token2
-            return this.internCompileFuncs.cpy(tokens[1], tokens[2], memPointers, debugMode);
+            return this.internCompileFuncs.cpy(tokens[1], tokens[2], this.tempMemory[0], memPointers, debugMode);
         },
+        set : (tokens, memPointers, debugMode) => {
+            // Set token1 to token2 (read token2 as number)
+            return this.internCompileFuncs.set(tokens[1], Number(tokens[2]), memPointers, debugMode);
+        },
+        seta : (tokens, memPointers, debugMode) => {
+            // Set item in array
+            // token1[token2] to token3
+            var memAddr = memPointers[tokens[1]].memStart;
+            memAddr += Number(tokens[2]) * 2;
+            return this.internCompileFuncs.set(memAddr, Number(tokens[3]), memPointers, debugMode);
+        },
+        aac : (tokens, memPointers, debugMode) => {
+            // Array access
+            // copy token1[token2] into token3
+            var memAddr = memPointers[tokens[1]].memStart;
+            memAddr += Number(tokens[2]) * 2;
+            return this.internCompileFuncs.cpy(memAddr, tokens[3], memPointers, debugMode);
+        },
+
+        // Input/output stuff:
+        // -------------------
+
         out : (tokens, memPointers, debugMode) => {
             // Output single value at token1
             return this.internCompileFuncs.out(tokens[1], memPointers, debugMode);
@@ -261,6 +451,18 @@ class AssemblyToBf {
         outa : (tokens, memPointers, debugMode) => {
             // Output string or array starting from token1
             return this.internCompileFuncs.outa(tokens[1], memPointers, debugMode);
+        },
+        outr : (tokens, memPointers, debugMode) => {
+            // Interpret token1 as an ascii char and output it
+            return this.internCompileFuncs.outr(Number(tokens[1]), debugMode);
+        },
+        lbr : (tokens, memPointers, debugMode) => {
+            // Line break. Output a newline and a carriage return
+            return this.internCompileFuncs.lrb(debugMode);
+        },
+        cls : (tokens, memPointers, debugMode) => {
+            // Clear the screen
+            return this.internCompileFuncs.outr(4, debugMode);
         },
         ich : (tokens, memPointers, debugMode) => {
             // Get a character in and write it to token1
@@ -273,21 +475,32 @@ class AssemblyToBf {
             if (tokens[2]) memAddr += Number(tokens[2]) * 2;
             return this.internCompileFuncs.ich(memAddr, memPointers, debugMode);
         },
-        ili : (tokens, memPointers, debugMode) => {
+        iln : (tokens, memPointers, debugMode) => {
             // Get a line and write it to string or arr starting at token1
             // (bad things will happen when the line is longer than the string)
-            return this.internCompileFuncs.ili(tokens[1], memPointers, debugMode);
+            return this.internCompileFuncs.iln(tokens[1], memPointers, debugMode);
         },
-        st : (tokens, memPointers, debugMode) => {
-            // Set token1 to token2 (read token2 as number)
-            return this.internCompileFuncs.st(tokens[1], Number(tokens[2]), memPointers, debugMode);
-        },
-        sta : (tokens, memPointers, debugMode) => {
-            // Set item in array
-            // token1[token2] to token3
+
+        // Control structures
+        // ------------------
+
+        luz : (tokens, memPointers, debugMode) => {
+            // Start of a loop - loop until value at token1 is zero
             var memAddr = memPointers[tokens[1]].memStart;
-            memAddr += Number(tokens[2]) * 2;
-            return this.internCompileFuncs.st(memAddr, Number(tokens[3]), memPointers, debugMode);
+            return this.internCompileFuncs.luz(memAddr, memPointers, debugMode);
+        },
+        eluz : (tokens, memPointers, debugMode) => {
+            // End of a loop-until-zero. Token1 says what value to look at for checking end
+            var memAddr = memPointers[tokens[1]].memStart;
+            return this.internCompileFuncs.eluz(memAddr, memPointers, debugMode);
+        },
+        ifz : (tokens, memPointers, debugMode) => {
+            // If token1 is 0, run the following code
+            return this.internCompileFuncs.ifz(tokens[1], this.tempMemory[0], this.tempMemory[1], memPointers, debugMode);
+        },
+        eifz : (tokens, memPointers, debugMode) => {
+            // End of ifz
+            return this.internCompileFuncs.eifz(tokens[1], this.tempMemory[0], this.tempMemory[1], memPointers, debugMode);
         }
     }
 
@@ -301,6 +514,7 @@ class AssemblyToBf {
         brainFCode += this.initMemory(memPointers, debugMode);
 
         textSection.forEach(line => {
+            line = line.trim();
             var tokens = line.split(' ');
             if (tokens[0] in this.publicCompileFuncs) {
                 var compilerFunction = this.publicCompileFuncs[tokens[0]];
@@ -333,7 +547,7 @@ class AssemblyToBf {
         var memPointers = {};
 
         // Leave space at the start for counters (+ 2 for label at start of memory)
-        var nextFreeMemIdx = 2 + this.internalCounters[this.internalCounters.length - 1];
+        var nextFreeMemIdx = 2 + this.tempMemory[this.tempMemory.length - 1];
 
         dataSection.forEach(line => {
             var tokens = line.split(' ');
@@ -350,7 +564,7 @@ class AssemblyToBf {
             }
             if (varType == 'a') {
                 // Add 1 to allow for terminator
-                var varLength = (arrLength + 1) * 2;
+                var varLength = (Number(tokens[2]) + 1) * 2;
 
                 memPointers[varName] = {
                     memStart : nextFreeMemIdx,
@@ -387,10 +601,10 @@ class AssemblyToBf {
         var code = '';
 
         // If there are no memory items, just quit
-        if (memPointers.length == 0) return '';
+        if (spnr.obj.keys(memPointers).length == 0) return '';
 
         // Go to start of usable memory
-        var firstPointerName = wrk.obj.keys(memPointers)[0]
+        var firstPointerName = spnr.obj.keys(memPointers)[0]
         code += this.internCompileFuncs.mpt(memPointers[firstPointerName].memStart);
 
         for (var name in memPointers) {
@@ -435,80 +649,6 @@ class AssemblyToBf {
             }
             if (debugMode) code += '\n\n';
         }
-        return code;
-    }
-}
-
-function readBssSection(bss) {
-
-    var memPointers = {};
-    var lines = bss.split('\n');
-    var prevMemIdx = 4;
-    for (var line of lines) {
-        line = line.trim();
-        if (line.length == 0) continue;
-        
-        memPointers[line] = prevMemIdx;
-        prevMemIdx += 2;
-    }
-    return memPointers;
-}
-
-function assemblyLineToBf(line, memPointerNames, memPointerValues) {
-    line = line.trim();
-    if (line.length == 0) return '';
-
-    var tokens = line.split(' ');
-
-    if (tokens[0] in publicCompilerFunctions) {
-        return publicCompilerFunctions[tokens[0]](tokens, memPointerNames, memPointerValues);
-    }
-    else return '';
-}
-
-const compilerFunctions = {
-    pts : () => '+[-<<+]-', // pointer to start
-    mpt : (memIdx, memPointerNames, memPointerValues) => {
-        // move pointer to
-        var code = '\n';
-        code += compilerFunctions.pts();
-
-        // If the mem index is not a number, then find the number attached to id
-        if (isNaN(memIdx)) memIdx = memPointers[memIdx];
-
-        code += '>'.repeat(memIdx);
-        return code;
-    }
-}
-
-const publicCompilerFunctions = {
-    inc : (tokens, memPointerNames, memPointerValues) => {
-        // increment
-        var code = '\n';
-        code += compilerFunctions.mpt(tokens[1], memPointerNames, memPointerValues);
-        code += '>+<'
-        return code;
-    },
-    dec : (tokens, memPointerNames, memPointerValues) => {
-        // decrement
-        var code = '\n';
-        code += compilerFunctions.mpt(tokens[1], memPointerNames, memPointerValues);
-        code += '>-<'
-        return code;
-    },
-    getl : (tokens, memPointerNames, memPointerValues) => {
-        // get a line and put it into token1, with token2 as max length
-
-        var code = '\n';
-        code += compilerFunctions.mpt(tokens[1], memPointerNames, memPointerValues);
-        code += `|>${',>>'.repeat(tokens[2])}>`;
-        return code;
-    },
-    out : (tokens, memPointerNames, memPointerValues) => {
-        // print string from token1 until you reach null char
-        var code = '\n';
-        code += compilerFunctions.mpt(tokens[1], memPointerNames, memPointerValues);
-        code += '>[.>>]<';
         return code;
     }
 }

@@ -523,6 +523,23 @@ class AssemblyToBf {
             }
         });
 
+        brainFCode = this.optimize(brainFCode);
+
+        return brainFCode;
+    }
+
+    static optimize(brainFCode) {
+        // Optimize brainFCode without affecting its functionality
+        
+        const inverseSymbols = {
+            '<' : '>',
+            '+' : '-',
+        };
+        for (const symbol1 of spnr.obj.keys(inverseSymbols)) {
+            const symbol2 = inverseSymbols[symbol1];
+            brainFCode = spnr.str.replaceAll(brainFCode, symbol1 + symbol2, '');
+            brainFCode = spnr.str.replaceAll(brainFCode, symbol2 + symbol1, '');
+        }
         return brainFCode;
     }
 

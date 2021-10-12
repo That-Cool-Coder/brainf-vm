@@ -185,6 +185,12 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
+        div : (dividend, divisor, quotient, memPointers, debugMode) => {
+            // Divide dividend by divisor, writing the result into quotient
+            
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
 
         // Memory manipulation
         // -------------------

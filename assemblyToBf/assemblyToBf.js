@@ -185,8 +185,42 @@ class AssemblyToBf {
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
-        div : (dividend, divisor, quotient, memPointers, debugMode) => {
-            // Divide dividend by divisor, writing the result into quotient
+        div : (dividend, divisor,
+            tempAddr1, tempAddr2, tempAddr3, tempAddr4, memPointers, debugMode) => {
+            // Divide dividend by divisor, writing the result into dividend
+
+            // Shortcut
+            var mpt = t => this.internCompileFuncs.mpt(t, memPointers, debugMode);
+
+            var code = '';
+
+            // Init all temp values
+            code += this.internCompileFuncs.zer(tempAddr1, memPointers, debugMode);
+            code += this.internCompileFuncs.zer(tempAddr2, memPointers, debugMode);
+            code += this.internCompileFuncs.zer(tempAddr3, memPointers, debugMode);
+            code += this.internCompileFuncs.zer(tempAddr4, memPointers, debugMode);
+
+            // x[temp0+x-]
+            code += this.internCompileFuncs.mv(dividend, tempAddr1, memPointers, debugMode);
+            // temp0[
+            code += `${mpt(tempAddr1)}>[<`;
+            //     y[temp1+temp2+y-]
+            //     temp2[y+temp2-]
+            code += this.internCompileFuncs.cpy(divisor,
+                tempAddr2, tempAddr3, memPointers, debugMode);
+            //     temp1[
+            code += `${mpt(tempAddr2)}>[<`;
+            //         temp2+
+            code += this.internCompileFuncs.inc(tempAddr3, memPointers, debugMode);
+            //         temp0-[temp2[-]temp3+temp0-]
+            //         temp3[temp0+temp3-]
+            //         temp2[
+            //             temp1-
+            //             [x-temp1[-]]+
+            //         temp2-]
+            //     temp1-]
+            //     x+
+            // temp0]
             
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;

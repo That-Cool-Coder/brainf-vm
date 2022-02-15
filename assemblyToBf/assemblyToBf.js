@@ -325,6 +325,7 @@ class AssemblyToBf {
         },
         lbr : (debugMode) => {
             // Line break. Output a newline and a carriage return
+            var code = '';
             code += this.internCompileFuncs.outr(13, false);
             code += this.internCompileFuncs.outr(10, false);
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
@@ -498,7 +499,7 @@ class AssemblyToBf {
         },
         lbr : (tokens, memPointers, debugMode) => {
             // Line break. Output a newline and a carriage return
-            return this.internCompileFuncs.lrb(debugMode);
+            return this.internCompileFuncs.lbr(debugMode);
         },
         cls : (tokens, memPointers, debugMode) => {
             // Clear the screen
@@ -569,7 +570,7 @@ class AssemblyToBf {
     }
 
     static optimize(brainFCode) {
-        // Optimize brainFCode without affecting its functionality
+        // Optimize brainFCode without effecting its functionality
         
         const inverseSymbols = {
             '<' : '>',

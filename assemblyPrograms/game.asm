@@ -34,56 +34,13 @@ section t
 ; ------------
 cls
 outa heading
-outr 10 ; carriage return
-outr 13 ; new line
+lbr
 outa instructions
 ich input
 
 ; Main loop
 ; ---------
 luz playing
-  cls
-
-  ; Draw the player
-  ; ---------------
-  cpy player_pos_x temp1
-  cpy player_pos_y temp2
-
-  ; Go to correct column
-  luz temp1
-    dec temp1
-    out right
-  eluz temp1
-
-  ; Go to correct row
-  luz temp2
-    dec temp2
-    out down
-  eluz temp2
-
-  out player_char
-  
-  ; Draw the enemy
-  ; ---------------
-  cpy enemy_pos_x temp1
-  cpy enemy_pos_y temp2
-
-  out reset_cursor
-
-  ; Go to correct column
-  luz temp1
-    dec temp1
-    out right
-  eluz temp1
-
-  ; Go to correct row
-  luz temp2
-    dec temp2
-    out down
-  eluz temp2
-
-  out enemy_char
-
   ; Get input
   ; ---------
   ich input
@@ -129,13 +86,80 @@ luz playing
   cpy enemy_move_counter temp1
   sub enemy_move_interval temp1
   ifz temp1
-    zer playing
-    add int_to_digit enemy_move_interval
+    zer enemy_move_counter
     inc enemy_pos_x
   eifz temp1
+
+  ; Check enemy colliding with player
+  ; ---------------------------------
+
+  ; (check x collision)
+  cpy player_pos_x temp1
+  sub enemy_pos_x temp1
+  zer temp2
+  ifz temp1
+    inc temp2
+  eifz temp1
+
+  ; (check y collision)
+  cpy player_pos_y temp1
+  sub enemy_pos_y temp1
+  ifz temp1
+    inc temp2
+  eifz temp1
+
+  ; (check if x and y is 0)
+  dec temp2
+  dec temp2
+  ifz temp2
+    zer playing
+  eifz temp2
+
+
+  cls
+
+  ; Draw the player
+  ; ---------------
+  cpy player_pos_x temp1
+  cpy player_pos_y temp2
+
+  ; Go to correct column
+  luz temp1
+    dec temp1
+    out right
+  eluz temp1
+
+  ; Go to correct row
+  luz temp2
+    dec temp2
+    out down
+  eluz temp2
+
+  out player_char
   
+  ; Draw the enemy
+  ; ---------------
+  cpy enemy_pos_x temp1
+  cpy enemy_pos_y temp2
+
+  out reset_cursor
+
+  ; Go to correct column
+  luz temp1
+    dec temp1
+    out right
+  eluz temp1
+
+  ; Go to correct row
+  luz temp2
+    dec temp2
+    out down
+  eluz temp2
+
+  out enemy_char
+
+
   inc frame_count
-mpt enemy_move_interval
 eluz playing
 
 

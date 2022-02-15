@@ -20,7 +20,7 @@ outr 13
 outa prompt2
 outr 10
 outr 13
-ili input
+iln input
 outa outputPrefix
 outa input
 

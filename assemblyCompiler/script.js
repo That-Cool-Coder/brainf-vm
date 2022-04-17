@@ -93,7 +93,6 @@ function tryLoadSelectedProject() {
     var projects = loadProjects();
     if (spnr.obj.keys(projects).length > 0) {
         crntProjectName = projectSelector.value;
-        console.log(crntProjectName)
         editor.setValue(projects[crntProjectName]);
     }
 }

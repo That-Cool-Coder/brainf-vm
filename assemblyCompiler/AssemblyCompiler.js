@@ -124,9 +124,6 @@ class AssemblyCompiler {
             // AND toAddr simulanously (deleting value in fromAddr).
             // Then move value from tempAddr to toAddr, restoring
 
-            // Shortcut
-            var mpt = t => this.internCompileFuncs.mpt(t, debugMode);
-
             var tempAddr = this.allocTempMemory();
             var code = '';
 
@@ -134,7 +131,7 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.zer(tempAddr, debugMode);
 
             // Then, while value of fromAddr is > 0, increment toAddr/internalCounter and decrement fromAddr
-            code += `${mpt(fromAddr)}>[-<${mpt(toAddr)}>+<${mpt(tempAddr)}>+<${mpt(fromAddr)}>]<`;
+            code += `${this.mpt(fromAddr)}>[-<${this.mpt(toAddr)}>+<${this.mpt(tempAddr)}>+<${this.mpt(fromAddr)}>]<`;
 
             // Then move value from temp storage to fromAddr, restoring it
             code += this.internCompileFuncs.mv(tempAddr, fromAddr, debugMode);
@@ -149,8 +146,7 @@ class AssemblyCompiler {
             // AND toAddr simulanously (deleting value in fromAddr).
             // Then move value from tempAddr to toAddr, restoring
 
-            // Shortcut
-            var mpt = t => this.internCompileFuncs.mpt(t, debugMode);
+
 
             var tempAddr = this.allocTempMemory();
             var code = '';
@@ -160,7 +156,7 @@ class AssemblyCompiler {
 
             // Then, while value of fromAddr is > 0, increment internalCounter
             // and decrement fromAddr/toAddr
-            code += `${mpt(fromAddr)}>[-<${mpt(toAddr)}>-<${mpt(tempAddr)}>+<${mpt(fromAddr)}>]<`;
+            code += `${this.mpt(fromAddr)}>[-<${this.mpt(toAddr)}>-<${this.mpt(tempAddr)}>+<${this.mpt(fromAddr)}>]<`;
 
             // Then move value from temp storage to fromAddr, restoring it
             code += this.internCompileFuncs.mv(tempAddr, fromAddr, debugMode);
@@ -173,8 +169,7 @@ class AssemblyCompiler {
             // Multiply the value of toAddr by fromAddr, modifying toAddr
             // How this works: Use tempAddr1 to keep track of how many times to add fromAddr.
 
-            // Shortcut
-            var mpt = t => this.internCompileFuncs.mpt(t, debugMode);
+
 
             var tempAddr1 = this.allocTempMemory();
             var code = '';
@@ -186,12 +181,12 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.cpy(fromAddr, toAddr, debugMode);
 
             // Move to tempAddr1 to init loop
-            code += `${mpt(tempAddr1)}>[<`;
+            code += `${this.mpt(tempAddr1)}>[<`;
 
             code += this.internCompileFuncs.add(fromAddr, toAddr, debugMode);
 
             // Decrement loop counter and end loop
-            code += `${mpt(tempAddr1)}>-]<`;
+            code += `${this.mpt(tempAddr1)}>-]<`;
             
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             this.freeTempMemory(tempAddr1);
@@ -200,31 +195,26 @@ class AssemblyCompiler {
         div : (dividend, divisor, debugMode) => {
             // Divide dividend by divisor, writing the result into dividend
 
-            // Shortcut
-            var mpt = t => this.internCompileFuncs.mpt(t, debugMode);
-
             var tempAddr1 = this.allocTempMemory();
             var tempAddr2 = this.allocTempMemory();
             var tempAddr3 = this.allocTempMemory();
-            var tempAddr4 = this.allocTempMemory();
             var code = '';
 
             // Init all temp values
             code += this.internCompileFuncs.zer(tempAddr1, debugMode);
             code += this.internCompileFuncs.zer(tempAddr2, debugMode);
             code += this.internCompileFuncs.zer(tempAddr3, debugMode);
-            code += this.internCompileFuncs.zer(tempAddr4, debugMode);
 
             // x[temp0+x-]
             code += this.internCompileFuncs.mv(dividend, tempAddr1, debugMode);
             // temp0[
-            code += `${mpt(tempAddr1)}>[<`;
+            code += `${this.mpt(tempAddr1)}>[<`;
             //     y[temp1+temp2+y-]
             //     temp2[y+temp2-]
             code += this.internCompileFuncs.cpy(divisor,
                 tempAddr2, tempAddr3, debugMode);
             //     temp1[
-            code += `${mpt(tempAddr2)}>[<`;
+            code += `${this.mpt(tempAddr2)}>[<`;
             //         temp2+
             code += this.internCompileFuncs.inc(tempAddr3, debugMode);
             //         temp0-[temp2[-]temp3+temp0-]
@@ -241,7 +231,15 @@ class AssemblyCompiler {
             this.freeTempMemory(tempAddr1);
             this.freeTempMemory(tempAddr2);
             this.freeTempMemory(tempAddr3);
-            this.freeTempMemory(tempAddr4);
+            return code;
+        },
+        neq : (memAddr1, memAddr2, outputAddr, debugMode) => {
+            // Write zero to outputAddr if memAddr1 and memAddr2 are equal, else a nonzero value
+
+            var code = '';
+            code += this.internCompileFuncs.cpy(memAddr1, outputAddr, debugMode);
+            code += this.internCompileFuncs.sub(memAddr2, outputAddr);
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },
 
@@ -267,16 +265,13 @@ class AssemblyCompiler {
         mv : (fromAddr, toAddr, debugMode) => {
             // Move the value from fromAddr to toAddr and leave fromAddr at zero
 
-            // Shortcut
-            var mpt = t => this.internCompileFuncs.mpt(t, debugMode);
-
             var code = '';
 
             // First make destination empty
             code += this.internCompileFuncs.zer(toAddr, debugMode);
 
             // Then, while value of fromAddr is > 0, increment toAddr and decrement fromAddr
-            code += `${mpt(fromAddr)}>[-<${mpt(toAddr)}>+<${mpt(fromAddr)}>]<`;
+            code += `${this.mpt(fromAddr)}>[-<${this.mpt(toAddr)}>+<${this.mpt(fromAddr)}>]<`;
 
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
@@ -287,8 +282,7 @@ class AssemblyCompiler {
             // AND toAddr simulanously (deleting value in fromAddr).
             // Then move value from tempAddr to toAddr, restoring
 
-            // Shortcut
-            var mpt = t => this.internCompileFuncs.mpt(t, debugMode);
+
 
             var tempAddr = this.allocTempMemory();
             var code = '';
@@ -298,7 +292,7 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.zer(tempAddr, debugMode);
 
             // Then, while value of fromAddr is > 0, increment toAddr/internalCounter and decrement fromAddr
-            code += `${mpt(fromAddr)}>[-<${mpt(toAddr)}>+<${mpt(tempAddr)}>+<${mpt(fromAddr)}>]<`;
+            code += `${this.mpt(fromAddr)}>[-<${this.mpt(toAddr)}>+<${this.mpt(tempAddr)}>+<${this.mpt(fromAddr)}>]<`;
 
             // Then move value from temp storage to fromAddr, restoring it
             code += this.internCompileFuncs.mv(tempAddr, fromAddr, debugMode);
@@ -403,9 +397,6 @@ class AssemblyCompiler {
             // If memAddr is 0, run the code between here and eifz
             // Alg based off https://esolangs.org/wiki/Brainfuck_algorithms#if_.28x.29_.7B_code1_.7D_else_.7B_code2_.7D
 
-            // Shortcut
-            var mpt = t => this.internCompileFuncs.mpt(t, debugMode);
-
             var tempAddr1 = this.allocTempMemory();
             var tempAddr2 = this.allocTempMemory();
 
@@ -415,9 +406,9 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.zer(tempAddr1, debugMode);
             code += '>+<';
             code += this.internCompileFuncs.zer(tempAddr2, debugMode);
-            code += `${mpt(memAddr)}>[<${mpt(tempAddr1)}>-<${mpt(memAddr)}>[<${mpt(tempAddr2)}>+<${mpt(memAddr)}>-]]<`;
-            code += `${mpt(tempAddr2)}>[<${mpt(memAddr)}>+<${mpt(tempAddr2)}>-]<`;
-            code += `${mpt(tempAddr1)}>[<`;
+            code += `${this.mpt(memAddr)}>[<${this.mpt(tempAddr1)}>-<${this.mpt(memAddr)}>[<${this.mpt(tempAddr2)}>+<${this.mpt(memAddr)}>-]]<`;
+            code += `${this.mpt(tempAddr2)}>[<${this.mpt(memAddr)}>+<${this.mpt(tempAddr2)}>-]<`;
+            code += `${this.mpt(tempAddr1)}>[<`;
 
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             // (don't free temp1 here - that's done out of the loop)
@@ -425,7 +416,7 @@ class AssemblyCompiler {
 
             return code;
         },
-        eifz : (memAddr, debugMode) => {
+        eifz : (debugMode) => {
             // End of ifz
 
             var tempAddr1 = this.controlStructureDataStack.pop();
@@ -437,7 +428,76 @@ class AssemblyCompiler {
             this.freeTempMemory(tempAddr1);
             
             return code;
+        },
+        ifp : (memAddr, debugMode) => {
+            // If memAddr is positive (if not zero)
+
+            var tempAddr = this.allocTempMemory();
+            this.controlStructureDataStack.push(tempAddr);
+
+            var code = '';
+            code += this.internCompileFuncs.cpy(memAddr, tempAddr, debugMode);
+            code += `${this.mpt(tempAddr)}>[<`
+
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            // (don't free temp here - it's freed in eifp)
+
+            return code;
+        },
+        eifp : (debugMode) => {
+            // End if ifp
+
+            var tempAddr = this.controlStructureDataStack.pop();
+            
+            var code = '';
+            code += `${this.mpt(tempAddr)}>[-]]<`
+            
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            this.freeTempMemory(tempAddr);
+
+            return code;
+        },
+        ieq : (memAddr1, memAddr2, debugMode) => {
+            // Run code if memAddr1 and memAddr2 are equal
+
+            var tempAddr = this.allocTempMemory();
+
+            var code = '';
+            code += this.internCompileFuncs.neq(memAddr1, memAddr2, tempAddr);
+            code += this.internCompileFuncs.ifz(tempAddr, debugMode);
+            code += this.internCompileFuncs.addDebugSpacing(code);
+            this.freeTempMemory(tempAddr);
+
+            return code;
+        },
+        eieq : (debugMode) => {
+            // End of ieq
+            var code = '';
+            code += this.internCompileFuncs.eifz(debugMode);
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        inq : (memAddr1, memAddr2, debugMode) => {
+            // Run code if memAddr1 and memAddr2 are not equal
+
+            var tempAddr = this.allocTempMemory();
+
+            var code = '';
+            code += this.internCompileFuncs.neq(memAddr1, memAddr2, tempAddr, debugMode);
+            code += this.internCompileFuncs.ifp(tempAddr, debugMode);
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            this.freeTempMemory(tempAddr);
+            
+            return code;
+        },
+        einq : (debugMode) => {
+            // End of inq
+            var code = '';
+            code += this.internCompileFuncs.eifp(debugMode);
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
         }
+
     }
 
     // A list of public compiler functions which all accept the same three arguments:
@@ -477,6 +537,10 @@ class AssemblyCompiler {
         mult : (tokens, debugMode) => {
             // Multiply token1 by token2, changing token2
             return this.internCompileFuncs.mult(tokens[1], tokens[2], debugMode)
+        },
+        neq : (tokens, debugMode) => {
+            // Write a zero into token3 if token1 and token2 are equal, else writes a nonzero value
+            return this.internCompileFuncs.neq(tokens[1], tokens[2], tokens[3])
         },
         
         // Memory management
@@ -577,9 +641,36 @@ class AssemblyCompiler {
         },
         eifz : (tokens, debugMode) => {
             // End of ifz
-            return this.internCompileFuncs.eifz(tokens[1], debugMode);
+            return this.internCompileFuncs.eifz(debugMode);
+        },
+        ifp : (tokens, debugMode) => {
+            // If token 1 is not zero, run the following code
+            return this.internCompileFuncs.ifp(tokens[1], debugMode);
+        },
+        eifp : (tokens, debugMode) => {
+            // End of ifp
+            return this.internCompileFuncs.eifp(debugMode);
+        },
+        ieq : (tokens, debugMode) => {
+            // Run the following code if token1 == token2
+            return this.internCompileFuncs.ieq(tokens[1], tokens[2], debugMode);
+        },
+        eieq : (tokens, debugMode) => {
+            // End of ieq
+            return this.internCompileFuncs.eieq(debugMode);
+        },
+        inq : (tokens, debugMode) => {
+            // Run the following code if token1 and token2 are not equal
+            return this.internCompileFuncs.inq(tokens[1], tokens[2], debugMode);
+        },
+        einq : (tokens, debugMode) => {
+            // End of inq
+            return this.internCompileFuncs.einq(debugMode);
         }
     }
+
+    // This is used so much in the compile funcs that a shortcut is needed
+    static mpt = this.internCompileFuncs.mpt;
 
     static compile(assemblyCode, debugMode=false) {
         this.usedTempMemory = {};

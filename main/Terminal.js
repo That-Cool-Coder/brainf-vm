@@ -1,5 +1,5 @@
 class Terminal {
-    /* This terminal prints only ASCII characters
+    /* This terminal prints only ASCII characters.
 
     Here's an overiew of some control characters used when printing:
     0: null char, does nothing and doesn't move cursor
@@ -20,11 +20,20 @@ class Terminal {
     Down arrow key: 20
     */
 
-    keyCodeToArrowKey = {
-        37 : 17,
-        39 : 18,
-        38 : 19,
-        40 : 20
+    plainAsciiKeys = spnr.str.alphabet
+        .concat(spnr.str.symbols)
+        .concat(spnr.str.digits)
+        .concat([' ']);
+    keyNameToAsciiCode = {
+        // (please order this numerically)
+
+        'Backspace' : 8,
+        'Enter' : 10,
+        'ArrowLeft' : 17,
+        'ArrowRight' : 18,
+        'ArrowUp' : 19,
+        'ArrowDown' : 20,
+        'Delete' : 127
     }
 
     constructor(parentElem=document.body, size=spnr.v(80, 30)) {
@@ -61,12 +70,9 @@ class Terminal {
         // Keyboard shortcut listener
         this.mainDiv.addEventListener("keyup", e => {
             if (! this.isRunningCode) {
-                // If it is enter key, submit
-                if (e.keyCode == 13) this.enterCommand();
-                // If it is up key, go up in history
-                if (e.keyCode == 38) this.previousHistoryItem();
-                // If it is down key, go down in history
-                if (e.keyCode == 40) this.nextHistoryItem();
+                if (e.key == 'Enter') this.enterCommand();
+                if (e.key == 'ArrowUp') this.previousHistoryItem();
+                if (e.key == 'ArrowDown') this.nextHistoryItem();
             }
         });
 
@@ -105,9 +111,10 @@ class Terminal {
     }
 
     async getChar() {
-        var keyCode = await this._waitForKeypress();
-        if (keyCode in this.keyCodeToArrowKey) keyCode = this.keyCodeToArrowKey[keyCode];
-        return keyCode;
+        var event = await this._waitForKeypress();
+        if (this.plainAsciiKeys.includes(event.key)) return event.key.charCodeAt();
+        else if (event.key in this.keyNameToAsciiCode) return this.keyNameToAsciiCode[event.key];
+        else return null; // character invalid
     }
 
     async enterCommand() {
@@ -149,9 +156,6 @@ class Terminal {
     }
 
     write(data) {
-
-        // Todo: check for escape codes and move the cursor accordingly
-
         for (var charIdx = 0; charIdx < data.length; charIdx ++) {
             var crntChar = data[charIdx];
             switch(crntChar) {
@@ -261,7 +265,7 @@ class Terminal {
             // also so that we can delete it afterwards
             var onKeyHandler = e => {
                 this.mainDiv.removeEventListener('keydown', onKeyHandler);
-                resolve(e.keyCode);
+                resolve(e);
                 e.preventDefault();
             }
             this.mainDiv.focus();

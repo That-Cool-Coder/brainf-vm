@@ -352,7 +352,7 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.zera(memAddr, memPointers, debugMode);
 
             code += this.internCompileFuncs.mpt(memAddr, memPointers, debugMode);
-            code += '>,-------------[+++++++++++++>>,-------------]+++++++++++++[-]<';
+            code += '>,----------[++++++++++>>,----------]++++++++++[-]<';
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
             return code;
         },

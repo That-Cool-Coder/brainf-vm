@@ -21,7 +21,7 @@ i enemy_char 88 ; capital X
 s heading 11 Weird Game
 s instructions 71 Use arrow keys to move around. Press q to quit. Press any key to start.
 i enemy_move_interval 3
-i quit_button 81 ; q/Q (need to fix input in terminal)
+i quit_button 113 ; q
 i left 17
 i right 18
 i up 19

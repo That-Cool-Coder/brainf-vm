@@ -51,11 +51,11 @@ class VirtualMachine {
             switch(this.crntProgram[this.programIndex]) {
                 case '<':
                     this.memPointer --;
-                    if (this.memoryPointer < 0) this.hasCrashed = true;
+                    if (this.memPointer < 0) this.hasCrashed = true;
                     break;
                 case '>':
                     this.memPointer ++;
-                    if (this.memoryPointer >= this.memory.length) this.hasCrashed = true;
+                    if (this.memPointer >= this.memory.length) this.hasCrashed = true;
                     break;
                 case '-':
                     this.memory[this.memPointer] --;

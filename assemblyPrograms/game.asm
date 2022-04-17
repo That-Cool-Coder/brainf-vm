@@ -6,10 +6,13 @@ i input
 i frame_count 0
 i enemy_move_counter 0
 i playing 1
+i died 0
 i player_pos_x 30
 i player_pos_y 30
 i enemy_pos_x 5
 i enemy_pos_y 5
+i player_offset_x
+i player_offset_y
 
 ; Constants
 i false 0
@@ -20,6 +23,8 @@ i player_char 64 ; @ symbol
 i enemy_char 88 ; capital X
 s heading 11 Weird Game
 s instructions 71 Use arrow keys to move around. Press q to quit. Press any key to start.
+s lose_text 9 You died
+s win_text 15 You won somehow
 i enemy_move_interval 3
 i quit_button 113 ; q
 i left 17
@@ -90,31 +95,23 @@ luz playing
     inc enemy_pos_x
   eifz temp1
 
+  ; Calculate player/enemy offset (used later) 
+  ; ------------------------------------------
+  cpy player_pos_x player_offset_x
+  sub enemy_pos_x player_offset_x
+
+  cpy player_pos_y player_offset_y
+  sub enemy_pos_y player_offset_y
+
   ; Check enemy colliding with player
   ; ---------------------------------
 
-  ; (check x collision)
-  cpy player_pos_x temp1
-  sub enemy_pos_x temp1
-  zer temp2
-  ifz temp1
-    inc temp2
-  eifz temp1
-
-  ; (check y collision)
-  cpy player_pos_y temp1
-  sub enemy_pos_y temp1
-  ifz temp1
-    inc temp2
-  eifz temp1
-
-  ; (check if x and y is 0)
-  dec temp2
-  dec temp2
-  ifz temp2
-    zer playing
-  eifz temp2
-
+  ifz player_offset_x
+    ifz player_offset_y
+      zer playing
+      inc died
+    eifz
+  eifz
 
   cls
 
@@ -162,4 +159,18 @@ luz playing
   inc frame_count
 eluz playing
 
+; Print outcome
+; -------------
+
+cls
+
+; won
+ifz died
+  outa win_text
+eifz
+; died
+luz died
+  outa lose_text
+  zer died
+eluz died
 

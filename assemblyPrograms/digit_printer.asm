@@ -14,7 +14,7 @@ s eight 5 eight
 s nine 4 nine
 
 s prompt 16 Enter a digit: 
-s input 1
+i input 1
 s output_prefix 10 You said: 
 
 i result

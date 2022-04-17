@@ -1,15 +1,23 @@
-#mainTable {
+.mainTable {
     width: 90vw;
     height: 70vh;
 }
 
-#mainTable td {
+.mainTable td {
     position: relative;
-    vertical-align: top;
+    width: 50%;
+    max-width: 50vw;
+    height: 100%;
+    margin: 2px;
 }
 
-textarea {
+#assemblyEditor, #brainFOut {
     position: absolute;
-    width: 95%;
-    height: 95%;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    resize: none;
 }

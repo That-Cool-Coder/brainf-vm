@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <title>Assembly to BrainF</title>
+        <link rel="stylesheet" href="../common/codemirror.css">
         <link rel="stylesheet" href="style.css">
     </head>
 
@@ -16,11 +17,12 @@
         <select id="projectSelector" onchange="tryLoadSelectedProject()"></select>
         <button onclick="createNewProject()">Create new project</button>
         <button onclick="tryDeleteCrntProject()">Delete this project</button>
-
-        <table id="mainTable">
+        <br />
+        <br />
+        <table class="mainTable">
             <tr>
                 <td>
-                    <textarea id="assemblyIn" placeholder="Enter assembly here"></textarea>
+                    <textarea id="assemblyEditor"></textarea>
                 </td>
                 <td>
                     <textarea id="brainFOut" placeholder="Compiled BrainF here"></textarea>
@@ -29,6 +31,7 @@
         </table>
     </body>
 
+    <script src="../common/codemirror.js"></script>
     <script src="https://unpkg.com/spnr/cdn/latest/spnr.min.js"></script>
     <script src="../common/spnr.min.js"></script>
     <script src="AssemblyCompiler.js"></script>

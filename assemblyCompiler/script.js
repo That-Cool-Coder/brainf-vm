@@ -11,17 +11,28 @@ outa message
 `
 
 const projectSelector = spnr.dom.id('projectSelector');
-const inputBox = spnr.dom.id('assemblyIn');
+const editorParent = spnr.dom.id('assemblyEditor').parentElement;
+const editor = CodeMirror.fromTextArea(spnr.dom.id('assemblyEditor'), {
+    lineNumbers: true,
+    lineWrapping: true
+});
+editor.setValue(textForEmptyInput);
+resizeEditor();
+
+var crntProjectName = 'unnamed';
 const outputBox = spnr.dom.id('brainFOut');
 const debugCheckbox = spnr.dom.id('debugCheckbox');
 
-inputBox.value = textForEmptyInput;
-
-var crntProjectName = 'unnamed';
+function resizeEditor() {
+    // Can't get editor to stay within bounds of parent element using css,
+    // so force it through code
+    const factor = 0.95;
+    editor.setSize(editorParent.clientWidth * factor, editorParent.clientHeight * factor);
+}
 
 function compile() {
     var debug = debugCheckbox.checked;
-    outputBox.value = AssemblyCompiler.compile(inputBox.value, debug);
+    outputBox.value = AssemblyCompiler.compile(editor.getValue(), debug);
 }
 
 function copyBrainF() {
@@ -40,7 +51,7 @@ function loadProjects() {
     var projects = {};
     spnr.obj.keys(localStorage).forEach(key => {
         if (key.includes(projectSavePrefix)) {
-            projects[key] = localStorage[key];
+            projects[cleanProjectName(key)] = localStorage[key];
         }
     });
 
@@ -49,18 +60,18 @@ function loadProjects() {
 
 function populateProjectSelector() {
     var projects = loadProjects();
-    var cleanProjectNames = spnr.obj.keys(projects).map(cleanProjectName);
+    var projectNames = spnr.obj.keys(projects);
 
     [...projectSelector.children].forEach(child => {
         projectSelector.removeChild(child);
     });
-    if (cleanProjectNames.length == 0) {
+    if (projectNames.length == 0) {
         var elem = document.createElement('option');
         elem.innerText = noProjectsText;
         projectSelector.appendChild(elem);
     }
     else {
-        cleanProjectNames.forEach(name => {
+        projectNames.forEach(name => {
             var elem = document.createElement('option');
             elem.innerText = name;
             elem.value = name;
@@ -74,16 +85,16 @@ function populateProjectSelector() {
 }
 
 function saveCrntProject() {
-    localStorage[projectSavePrefix + crntProjectName] = inputBox.value;
+    localStorage[projectSavePrefix + crntProjectName] = editor.getValue();
     populateProjectSelector();
 }
 
 function tryLoadSelectedProject() {
     var projects = loadProjects();
     if (spnr.obj.keys(projects).length > 0) {
-        crntProjectName = projectSavePrefix + projectSelector.value;
-        inputBox.value = projects[crntProjectName];
-        crntProjectName = cleanProjectName(crntProjectName); // remove prefix AFTER reading project
+        crntProjectName = projectSelector.value;
+        console.log(crntProjectName)
+        editor.setValue(projects[crntProjectName]);
     }
 }
 
@@ -108,6 +119,11 @@ function createNewProject() {
         return;
     }
 
+    if (newProjectName.includes(projectSavePrefix)) {
+        alert(`Project names can't contain "${projectSavePrefix}"`);
+        return;
+    }
+
     // For some reason spaces break the selector
     if (newProjectName.includes(' ')) {
         alert('Spaces are not allowed in project names');
@@ -116,7 +132,7 @@ function createNewProject() {
 
     saveCrntProject(); // save previous project
     crntProjectName = newProjectName;
-    inputBox.value = textForEmptyInput;
+    editor.setValue(textForEmptyInput);
     saveCrntProject();
 }
 
@@ -127,9 +143,11 @@ function renameCrntProject() {
 var projects = loadProjects();
 if (spnr.obj.keys(projects).length > 0) {
     crntProjectName = spnr.obj.keys(projects)[0];
-    inputBox.value = projects[crntProjectName];
-    crntProjectName = cleanProjectName(crntProjectName); // remove prefix AFTER reading project
+    console.log(crntProjectName)
+    editor.setValue(projects[crntProjectName]);
 }
 
 populateProjectSelector();
-inputBox.addEventListener('keyup', saveCrntProject);
+editor.on("change", saveCrntProject);
+
+window.addEventListener('resize', resizeEditor);

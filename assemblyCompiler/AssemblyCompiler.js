@@ -54,7 +54,7 @@ These are the valid labels:
 
 // This class is coded somewhat weirdly because...
 // ...I'm trying to code it similarly to how I would code it in assembly
-class AssemblyToBf {
+class AssemblyCompiler {
     // memory indexes of the internal counters (add more if needed)
     static tempMemory = [
         2, 4, 6

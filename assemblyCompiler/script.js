@@ -21,7 +21,7 @@ var crntProjectName = 'unnamed';
 
 function compile() {
     var debug = debugCheckbox.checked;
-    outputBox.value = AssemblyToBf.compile(inputBox.value, debug);
+    outputBox.value = AssemblyCompiler.compile(inputBox.value, debug);
 }
 
 function copyBrainF() {
@@ -80,7 +80,6 @@ function saveCrntProject() {
 
 function tryLoadSelectedProject() {
     var projects = loadProjects();
-    var selectedProjectName = [];
     if (spnr.obj.keys(projects).length > 0) {
         crntProjectName = projectSavePrefix + projectSelector.value;
         inputBox.value = projects[crntProjectName];
@@ -122,7 +121,7 @@ function createNewProject() {
 }
 
 function renameCrntProject() {
-
+    // todo: code this
 }
 
 var projects = loadProjects();

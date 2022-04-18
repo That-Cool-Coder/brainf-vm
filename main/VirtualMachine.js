@@ -5,6 +5,8 @@ class VirtualMachine {
     // It runs slightly differently fron normaly BrainF because
     // the , function waits for a key press and writes it to memory
 
+    // We also have the $ symbol to clear memory and * to dump it, but these don't do anything except help debugging
+
     constructor(name, memorySize, getCharFunc=null, putTextFunc=null, autosaveMemory=false) {
         this.name = name;
         this.memory = new Uint8Array(memorySize);
@@ -79,8 +81,11 @@ class VirtualMachine {
                     this.handleSquareBracket();
                     break;
                 case this.debugSymbol:
+                    var memory = new Array(...this.memory);
+                    while(memory[memory.length-1] === 0) memory.pop(); // remove trailing zeroes
+                    var memoryText = memory.length > 0 ? memory.toString() : '(all zeroes)';
                     this.putTextFunc(
-                        `Mem pointer: ${this.memPointer} Memory: ${this.memory.toString()}\r\n`);
+                        `Mem pointer: ${this.memPointer} Memory: ${memoryText}\r\n`);
                     break;
                 case this.clearMemorySymbol:
                     this.memory.fill(0);

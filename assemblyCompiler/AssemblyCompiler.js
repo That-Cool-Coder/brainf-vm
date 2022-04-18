@@ -297,6 +297,47 @@ class AssemblyCompiler {
 
             return code;
         },
+        gt : (memAddr1, memAddr2, outputAddr, debugMode) => {
+            // Write into outputAddr whether memAddr1 is greater than memAddr2
+
+            var tempAddr1 = this.allocTempMemory();
+            var tempAddr2 = this.allocTempMemory();
+            var tempAddr3 = this.allocTempMemory();
+            var tempAddr4 = this.allocTempMemory();
+
+            var code = '';
+            code += this.internCompileFuncs.cpy(memAddr1, tempAddr3, debugMode);
+            code += this.internCompileFuncs.cpy(memAddr2, tempAddr4, debugMode);
+            code += this.mpt(tempAddr1) + '>[-]+[<';
+                code += this.internCompileFuncs.cpy(tempAddr3, tempAddr1, debugMode);
+                code += this.internCompileFuncs.bool(tempAddr1, debugMode);
+                code += this.internCompileFuncs.not(tempAddr1, debugMode);
+                code += this.internCompileFuncs.cpy(tempAddr4, tempAddr2, debugMode);
+                code += this.internCompileFuncs.bool(tempAddr2, debugMode);
+                code += this.internCompileFuncs.not(tempAddr2, debugMode);
+                code += this.internCompileFuncs.or(tempAddr1, tempAddr2, debugMode);
+                code += this.mpt(tempAddr1) + '>[-]+<';
+                code += `${this.mpt(tempAddr2)}>[[-]<${this.mpt(tempAddr1)}>[-]<${this.mpt(tempAddr2)}>]<`;
+                code += this.internCompileFuncs.dec(tempAddr3, debugMode);
+                code += this.internCompileFuncs.dec(tempAddr4, debugMode);
+            code += this.mpt(tempAddr1) + '*>]<';
+
+            code += this.internCompileFuncs.inc(tempAddr3, debugMode);
+            code += this.internCompileFuncs.zer(outputAddr, debugMode);
+            code += this.mpt(tempAddr3) + '>[<';
+                code += this.internCompileFuncs.inc(outputAddr, debugMode);
+                code += this.internCompileFuncs.zer(tempAddr3, debugMode);
+            code += this.mpt(tempAddr3) + '>]<';
+
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+
+            this.freeTempMemory(tempAddr1);
+            this.freeTempMemory(tempAddr2);
+            this.freeTempMemory(tempAddr3);
+            this.freeTempMemory(tempAddr4);
+
+            return code;
+        },
 
         // Memory manipulation
         // -------------------
@@ -360,47 +401,6 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.zer(memAddr, debugMode);
             code += '>' + '+'.repeat(value) + '<';
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
-            return code;
-        },
-        gt : (memAddr1, memAddr2, outputAddr, debugMode) => {
-            // Write into outputAddr whether memAddr1 is greater than memAddr2
-
-            var tempAddr1 = this.allocTempMemory();
-            var tempAddr2 = this.allocTempMemory();
-            var tempAddr3 = this.allocTempMemory();
-            var tempAddr4 = this.allocTempMemory();
-
-            var code = '';
-            code += this.internCompileFuncs.cpy(memAddr1, tempAddr3, debugMode);
-            code += this.internCompileFuncs.cpy(memAddr2, tempAddr4, debugMode);
-            code += this.mpt(tempAddr1) + '>[-]+[<';
-            code += this.internCompileFuncs.cpy(tempAddr3, tempAddr1, debugMode);
-            code += this.internCompileFuncs.bool(tempAddr1, debugMode);
-            code += this.internCompileFuncs.not(tempAddr1, debugMode);
-            code += this.internCompileFuncs.cpy(tempAddr4, tempAddr2, debugMode);
-            code += this.internCompileFuncs.bool(tempAddr2, debugMode);
-            code += this.internCompileFuncs.not(tempAddr2, debugMode);
-            code += this.internCompileFuncs.or(tempAddr1, tempAddr2, debugMode);
-            code += `${this.mpt(tempAddr2)}>[[-]<${this.mpt(tempAddr1)}>[-]<${this.mpt(tempAddr2)}>]<`;
-            code += this.internCompileFuncs.dec(tempAddr3, debugMode);
-            code += this.internCompileFuncs.dec(tempAddr4, debugMode);
-            code += this.internCompileFuncs.zer(tempAddr1, debugMode);
-            code += this.mpt(tempAddr1) + '>]<';
-
-            // code += this.internCompileFuncs.inc(tempAddr3, debugMode);
-            code += this.internCompileFuncs.zer(outputAddr, debugMode);
-            code += this.mpt(tempAddr3) + '>[<';
-            code += this.internCompileFuncs.inc(outputAddr, debugMode);
-            code += this.internCompileFuncs.zer(tempAddr3, debugMode);
-            code += this.mpt(tempAddr3) + '>]<';
-
-            code += this.internCompileFuncs.addDebugSpacing(debugMode);
-
-            this.freeTempMemory(tempAddr1);
-            this.freeTempMemory(tempAddr2);
-            this.freeTempMemory(tempAddr3);
-            this.freeTempMemory(tempAddr4);
-
             return code;
         },
 

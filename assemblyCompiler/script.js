@@ -32,7 +32,12 @@ function resizeEditor() {
 
 function compile() {
     var debug = debugCheckbox.checked;
-    outputBox.value = AssemblyCompiler.compile(editor.getValue(), debug);
+    try {
+        outputBox.value = AssemblyCompiler.compile(editor.getValue(), debug);
+    }
+    catch (e) {
+        outputBox.value = e.toString();
+    }
 }
 
 function copyBrainF() {

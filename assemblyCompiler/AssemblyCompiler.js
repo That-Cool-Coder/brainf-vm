@@ -67,6 +67,8 @@ class AssemblyCompiler {
     // (top is more nested)
     static controlStructureDataStack = [];
 
+    static crntLineNumber = 0;
+
     // A list of private internal compiler functions that have unique arguments
     // Using these requires knowledge of each individual function
     static internCompileFuncs = {
@@ -85,7 +87,10 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.pts(debugMode);
 
             // If the mem index is not a number, then put a placeholder
-            if (isNaN(memIdx)) code += this.memoryPlaceholderPrefix + this.memPointers[memIdx].memStart + this.memoryPlaceholderPostfix;
+            if (isNaN(memIdx)) {
+                if (this.memPointers[memIdx] == undefined) throw new UndefinedVariableException(memIdx, this.crntLineNumber);
+                code += this.memoryPlaceholderPrefix + this.memPointers[memIdx].memStart + this.memoryPlaceholderPostfix;
+            }
             // Else just move to that index
             else code += '>'.repeat(memIdx);
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
@@ -332,8 +337,6 @@ class AssemblyCompiler {
             // AND toAddr simulanously (deleting value in fromAddr).
             // Then move value from tempAddr to toAddr, restoring
 
-
-
             var tempAddr = this.allocTempMemory();
             var code = '';
 
@@ -357,6 +360,47 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.zer(memAddr, debugMode);
             code += '>' + '+'.repeat(value) + '<';
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        gt : (memAddr1, memAddr2, outputAddr, debugMode) => {
+            // Write into outputAddr whether memAddr1 is greater than memAddr2
+
+            var tempAddr1 = this.allocTempMemory();
+            var tempAddr2 = this.allocTempMemory();
+            var tempAddr3 = this.allocTempMemory();
+            var tempAddr4 = this.allocTempMemory();
+
+            var code = '';
+            code += this.internCompileFuncs.cpy(memAddr1, tempAddr3, debugMode);
+            code += this.internCompileFuncs.cpy(memAddr2, tempAddr4, debugMode);
+            code += this.mpt(tempAddr1) + '>[-]+[<';
+            code += this.internCompileFuncs.cpy(tempAddr3, tempAddr1, debugMode);
+            code += this.internCompileFuncs.bool(tempAddr1, debugMode);
+            code += this.internCompileFuncs.not(tempAddr1, debugMode);
+            code += this.internCompileFuncs.cpy(tempAddr4, tempAddr2, debugMode);
+            code += this.internCompileFuncs.bool(tempAddr2, debugMode);
+            code += this.internCompileFuncs.not(tempAddr2, debugMode);
+            code += this.internCompileFuncs.or(tempAddr1, tempAddr2, debugMode);
+            code += `${this.mpt(tempAddr2)}>[[-]<${this.mpt(tempAddr1)}>[-]<${this.mpt(tempAddr2)}>]<`;
+            code += this.internCompileFuncs.dec(tempAddr3, debugMode);
+            code += this.internCompileFuncs.dec(tempAddr4, debugMode);
+            code += this.internCompileFuncs.zer(tempAddr1, debugMode);
+            code += this.mpt(tempAddr1) + '>]<';
+
+            // code += this.internCompileFuncs.inc(tempAddr3, debugMode);
+            code += this.internCompileFuncs.zer(outputAddr, debugMode);
+            code += this.mpt(tempAddr3) + '>[<';
+            code += this.internCompileFuncs.inc(outputAddr, debugMode);
+            code += this.internCompileFuncs.zer(tempAddr3, debugMode);
+            code += this.mpt(tempAddr3) + '>]<';
+
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+
+            this.freeTempMemory(tempAddr1);
+            this.freeTempMemory(tempAddr2);
+            this.freeTempMemory(tempAddr3);
+            this.freeTempMemory(tempAddr4);
+
             return code;
         },
 
@@ -613,6 +657,10 @@ class AssemblyCompiler {
             // assumes both values are already booleans
             return this.internCompileFuncs.and(tokens[1], tokens[2], debugMode);
         },
+        gt : (tokens, debugMode) => {
+            // Write into token3 whether token1 is greater than token2
+            return this.internCompileFuncs.gt(tokens[1], tokens[2], tokens[3], debugMode);
+        },
         
         // Memory management
         // -----------------
@@ -753,16 +801,22 @@ class AssemblyCompiler {
         this.memPointers = this.readDataSection(dataSection);
 
         // Compile text section first so we know how much temp memory is needed
+        this.crntLineNumber = dataSection.length + 2; // (add 2 to account for the 2 section headers)
         var textSectionBrainF = '';
-        textSection.forEach(line => {
+        for (var line of textSection) {
             line = line.trim();
+            this.crntLineNumber += 1;
+            if (line.length == 0) continue;
+            if (line[0] == ';') continue;
+
             var tokens = line.split(' ');
             if (tokens[0] in this.publicCompileFuncs) {
                 var compilerFunction = this.publicCompileFuncs[tokens[0]];
                 textSectionBrainF += compilerFunction(tokens, debugMode);
                 if (debugMode) brainFCode += '\n';
             }
-        });
+            else throw new UnknownCommandException(tokens[0], this.crntLineNumber);
+        };
         
         // Compile memory-init code
         var memoryInitBrainF = this.initMemory(debugMode);
@@ -793,7 +847,7 @@ class AssemblyCompiler {
         // Otherwise add more temp memory
         else {
             var address = this.highestUsedTempMemory() + 2;
-            this.freeTempMemory[address] = true;
+            this.usedTempMemory[address] = true;
             return address;
         }
     }
@@ -805,11 +859,11 @@ class AssemblyCompiler {
     static highestUsedTempMemory() {
         // Highest temp memory that is used at any point
         if (spnr.obj.keys(this.usedTempMemory).length == 0) return 0;
-        else return Number(spnr.obj.keys(this.usedTempMemory).sort().reverse()[0]);
+        else return Number(spnr.obj.keys(this.usedTempMemory).map(Number).sort((a, b) => a - b).reverse()[0]);
     }
 
     static optimize(brainFCode) {
-        // Optimize brainFCode without effecting its functionality
+        // Optimize brainFCode without affecting its functionality
         
         const inverseSymbols = {
             '<' : '>',
@@ -824,6 +878,7 @@ class AssemblyCompiler {
     }
 
     static splitSections(assemblyLines) {
+
         var crntSectionName = '';
         var dataSection = [];
         var textSection = [];
@@ -949,10 +1004,11 @@ class AssemblyCompiler {
     }
 
     static fillMemoryPlaceholders(brainFCode) {
+        var highestUsedTempMemory = this.highestUsedTempMemory();
         for (var pointerInfo of spnr.obj.values(this.memPointers)) {
             brainFCode = spnr.str.replaceAll(brainFCode,
                 this.memoryPlaceholderPrefix + (pointerInfo.memStart) + this.memoryPlaceholderPostfix,
-                '>'.repeat(pointerInfo.memStart + this.highestUsedTempMemory() + 2));
+                '>'.repeat(pointerInfo.memStart + highestUsedTempMemory + 2));
         }
         return brainFCode;
     }

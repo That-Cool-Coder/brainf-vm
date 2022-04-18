@@ -233,6 +233,9 @@ class AssemblyCompiler {
             this.freeTempMemory(tempAddr3);
             return code;
         },
+
+        // Booleans and comparisons
+        // ------------------------
         neq : (memAddr1, memAddr2, outputAddr, debugMode) => {
             // Write zero to outputAddr if memAddr1 and memAddr2 are equal, else a nonzero value
 
@@ -240,6 +243,53 @@ class AssemblyCompiler {
             code += this.internCompileFuncs.cpy(memAddr1, outputAddr, debugMode);
             code += this.internCompileFuncs.sub(memAddr2, outputAddr);
             code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        bool : (memAddr, debugMode) => {
+            //  Converts value of memAddr to boolean - if it's zero leaves it at zero, otherwise sets it to one
+
+            var tempAddr = this.allocTempMemory();
+            var code = '';
+            code += this.internCompileFuncs.cpy(memAddr, tempAddr, debugMode);
+            code += `${this.mpt(tempAddr)}>[<${this.mpt(memAddr)}>-[-]+<${this.mpt(tempAddr)}>[-]]<`;
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            this.freeTempMemory(tempAddr);
+            return code;
+        },
+        not : (memAddr, debugMode) => {
+            // inverts value of memAddr. only works if memAddr has value of 0 or 1
+            var code = '';
+            code += this.mpt(memAddr) + '>-<' + this.internCompileFuncs.bool(memAddr, debugMode);
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        or : (memAddr1, memAddr2, debugMode) => {
+            // Or operator, writes result into memAddr2
+            // (assumes both values are already booleans)
+
+            var code = '';
+            code += this.internCompileFuncs.add(memAddr1, memAddr2, debugMode);
+            code += this.internCompileFuncs.bool(memAddr2, debugMode);
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+            return code;
+        },
+        and : (memAddr1, memAddr2, debugMode) => {
+            // And operator, writes result into memAddr2
+            // (assumes both values are already booleans)
+
+            var tempAddr = this.allocTempMemory();
+
+            var code = '';
+            code += this.internCompileFuncs.cpy(memAddr1, tempAddr, debugMode);
+            code += this.internCompileFuncs.add(memAddr2, tempAddr, debugMode);
+            code += this.internCompileFuncs.zer(memAddr2, debugMode);
+            code += this.mpt(tempAddr) + '>[-[<';
+            code += this.mpt(memAddr2) + '>[-]+<';
+            code += this.mpt(tempAddr) + '>[-]]]<';
+            code += this.internCompileFuncs.addDebugSpacing(debugMode);
+
+            this.freeTempMemory(tempAddr);
+
             return code;
         },
 
@@ -536,11 +586,32 @@ class AssemblyCompiler {
         },
         mult : (tokens, debugMode) => {
             // Multiply token1 by token2, changing token2
-            return this.internCompileFuncs.mult(tokens[1], tokens[2], debugMode)
+            return this.internCompileFuncs.mult(tokens[1], tokens[2], debugMode);
         },
+
+        // Booleans and comparisons
+        // ------------------------
         neq : (tokens, debugMode) => {
             // Write a zero into token3 if token1 and token2 are equal, else writes a nonzero value
-            return this.internCompileFuncs.neq(tokens[1], tokens[2], tokens[3])
+            return this.internCompileFuncs.neq(tokens[1], tokens[2], tokens[3], debugMode);
+        },
+        bool : (tokens, debugMode) => {
+            // Convert token1 to boolean - if it's zero leave it, else set it to 1
+            return this.internCompileFuncs.bool(tokens[1], debugMode);
+        },
+        not : (tokens, debugMode) => {
+            // inverts value of token1. Assumes token1 is either 0 or 1
+            return this.internCompileFuncs.not(tokens[1], debugMode);
+        },
+        or : (tokens, debugMode) => {
+            // or operator on token1 and token2, writes result into token2.
+            // assumes both values are already booleans
+            return this.internCompileFuncs.or(tokens[1], tokens[2], debugMode);
+        },
+        and : (tokens, debugMode) => {
+            // and operator on token1 and token2, writes result into token2.
+            // assumes both values are already booleans
+            return this.internCompileFuncs.and(tokens[1], tokens[2], debugMode);
         },
         
         // Memory management
@@ -669,7 +740,7 @@ class AssemblyCompiler {
         }
     }
 
-    // This is used so much in the compile funcs that a shortcut is needed
+    // This is used so often that a shortcut is needed
     static mpt = this.internCompileFuncs.mpt;
 
     static compile(assemblyCode, debugMode=false) {

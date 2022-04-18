@@ -142,7 +142,6 @@ function renameCrntProject() {
 var projects = loadProjects();
 if (spnr.obj.keys(projects).length > 0) {
     crntProjectName = spnr.obj.keys(projects)[0];
-    console.log(crntProjectName)
     editor.setValue(projects[crntProjectName]);
 }
 

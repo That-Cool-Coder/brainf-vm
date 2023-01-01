@@ -1,0 +1,43 @@
+prototyping implementation of the VM, ignoring the fact than an 8-bit VM is pretty pointless
+
+!dvari running 0 1!
+!dvar crnt_inst 1!
+!dvar crnt_inst_arg_1 2!
+!dvar crnt_inst_arg_2 3!
+!dvar program_pointer 4!
+
+!dvar ra 5!
+!dvar rb 6!
+!dvar rc 7!
+!dvar rd 8!
+
+!dvar t0 4!
+!dvar t1 5!
+
+!loopz running!
+    todo: fetch the instruction into the register & read arg values
+
+    SWITCH ON INSTRUCTION:
+
+    quit instruction
+    !copy crnt_inst t0 t1!
+    !ifz t0 t1!
+        !lvar running!-
+    !eifz t1!
+    !lvar crnt_inst! -
+
+    zero register
+    !copy crnt_inst t0 t1!
+    !ifz t0 t1!
+        !lvar running!-
+    !eifz t1!
+    !lvar crnt_inst! -
+
+    constant to register
+    !copy crnt_inst t0 t1!
+    !ifz t0 t1!
+
+    !eifz t1!
+    !lvar crnt_inst! -
+    
+!eloopz running!

@@ -28,9 +28,11 @@ def macro_function(num_required_args):
 
 def maybe_read_var(compile_context: CompileContext, address_or_var: str):
     # Utility func for getting the address of a maybe-var.
-    # If value passed in is a digit string then returns that. Else returns address of var with that name.
+    # If value passed in is a number then returns that. If value is a number prefixed with - then returns a negative number. Else returns address of var with that name.
     
     if address_or_var.isdigit():
+        return int(address_or_var)
+    elif address_or_var[0] == '-' and address_or_var[1:].isdigit():
         return int(address_or_var)
     else:
         try:
@@ -77,6 +79,38 @@ def lvar(cc, a):
 
     return lvi(cc, a[0])
 
+# Memory pointer updating
+# Not actually moving the memory pointer, but updating the position of the pointer in the compiler's understanding
+# Intended to be used after performing unsafe operations through manual BF
+
+@macro_function(1)
+def movep(cc, a):
+    # Move compile-checker pointer to a0
+
+    cc.last_cursor_position = maybe_read_var(cc, a[0])
+    return ''
+
+@macro_function(1)
+def movepl(cc, a):
+    # Move compile-checker pointer to left by a0
+
+    cc.last_cursor_position += int(a[0])
+    return ''
+
+@macro_function(1)
+def movepr(cc, a):
+    # Move compile-checker pointer to right by a0
+
+    cc.last_cursor_position -= int(a[0])
+    return ''
+
+@macro_function(0)
+def debugp(cc, a):
+    # Debug pointer - prints what the compile-time pointer currently is to screen
+    
+    print(cc.last_cursor_position)
+    return ''
+
 # Basic memory management
 
 @macro_function(2)
@@ -101,6 +135,13 @@ def move(cc, a):
         loopz(cc, [a[0]]) + lvi(cc, a[0]) + '-' + lvi(cc, a[1]) + '+' + eloopz(cc, [a[0]]) # Perform the move
     )
 
+@macro_function(3)
+def swap(cc, a):
+    # Swap a0 and a1 using a2 as temp
+    return (
+        move(cc, [a[0], a[2]]) + move(cc, [a[1], a[0]]) + move(cc, [a[2], a[1]])
+    )
+
 # Flow control
 
 @macro_function(1)
@@ -121,7 +162,7 @@ def ifnz(cc, a):
     return lvi(cc, a[0]) + '['
 @macro_function(1)
 def eifnz(cc, a):
-    # End of ifnz
+    # End of ifnz (destructive on a0)
 
     return lvi(cc, a[0]) + '[-]]'
 
@@ -131,7 +172,7 @@ def ifz(cc, a):
     # (destructive on a0)
 
     return (
-        lvi(cc, a[1]) + '[-]+' + lvi(cc, a[0]) + '[' + lvi(cc, a[1]) + lvi(cc, a[0]) + '[-]]' + # setup not var
+        lvi(cc, a[1]) + '[-]+' + lvi(cc, a[0]) + '[' + lvi(cc, a[1]) + '[-]' + lvi(cc, a[0]) + '[-]]' + # setup not var
         lvi(cc, a[1]) + '[' # Actually do the branch
     )
 @macro_function(1)
@@ -149,3 +190,23 @@ def eifz(cc, a):
 # @macro_function(1)
 # def eieql(cc, a):
 #     # End of ieql. a0 is a3 from ieql
+
+# Math
+
+@macro_function(2)
+def add(cc, a):
+    # Calculate a0 + a1. Destructive on a0 and a1, result is in a0
+    return (
+        loopz(cc, [a[1]]) + 
+        '-' + lvi(cc, a[0]) + '+' +
+        eloopz(cc, [a[1]])
+    )
+
+@macro_function(2)
+def sub(cc, a):
+    # Calculate a0 - a1. Destructive on a0 and a1, result is in a0
+    return (
+        loopz(cc, [a[1]]) + 
+        '-' + lvi(cc, a[0]) + '-' +
+        eloopz(cc, [a[1]])
+    )

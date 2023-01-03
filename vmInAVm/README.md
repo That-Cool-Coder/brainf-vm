@@ -21,3 +21,5 @@ DO STUFF
 - If a major comment comes just before a control-structure macro that indents anyway, you don't have to indent twice
 - Minor comments are written in lower-case letters at the end of most lines
 - Groups of 3-4 macros related to doing the same thing can be put one after another on the same line to save space and give a better indication of structure
+- The `!rem!` macro is available for creating comments that may include brainf characters, do not feel compelled to always use it though
+- When using the `!alias!` macro, prefix the name of the aliased variable with `al_`.

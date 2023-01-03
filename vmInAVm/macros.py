@@ -12,33 +12,45 @@ class CompileContext:
 
 MACRO_COMPILERS = {}
 
-def macro_function(num_required_args):
+def macro_function(num_required_args, variadic=False):
     # Automatically adds code to check if required num args are present, and auto registers in MACRO_COMPILERS
 
     def wrapper(to_decorate):
         def inner_wrapper(compile_context, macro_args):
             num_args_provided = len(macro_args)
-            if num_args_provided != num_required_args:
-                raise ValueError(f'Incorrect number of args passed to {to_decorate.__name__}: {num_args_provided} instead of {num_required_args}')
+
+            if variadic and not num_args_provided >= num_required_args:
+                raise ValueError(f'Incorrect number of args passed to {to_decorate.__name__}: {num_args_provided} given, expected at least {num_required_args}')
+            elif not variadic and num_args_provided != num_required_args:
+                raise ValueError(f'Incorrect number of args passed to {to_decorate.__name__}: {num_args_provided} given, expected {num_required_args}')
+
             return to_decorate(compile_context, macro_args)
         # inner_wrapper.is_macro_function = True
         MACRO_COMPILERS[to_decorate.__name__] = inner_wrapper
         return inner_wrapper
     return wrapper
 
+def read_var(compile_context: CompileContext, var: str):
+    # Get the address of a variable
+    # Only use this if you are certain that you have a variable and not a raw address - otherwise prefer maybe_read_var
+    try:
+        return compile_context.variables[var]
+    except KeyError as e:
+        raise ValueError(f'Undefined variable: {var}')
+
 def maybe_read_var(compile_context: CompileContext, address_or_var: str):
     # Utility func for getting the address of a maybe-var.
     # If value passed in is a number then returns that. If value is a number prefixed with - then returns a negative number. Else returns address of var with that name.
     
+    # Read positive values
     if address_or_var.isdigit():
         return int(address_or_var)
+    # Read negative values
     elif address_or_var[0] == '-' and address_or_var[1:].isdigit():
         return int(address_or_var)
+    # Try lookup var
     else:
-        try:
-            return compile_context.variables[address_or_var]
-        except KeyError as e:
-            raise ValueError(f'Undefined variable: {address_or_var}')
+        return read_var(compile_context, address_or_var)
 
 def lvar_inner(compile_context: CompileContext, target): # target is address or var
     # Generates code for moving the pointer to a variable, also updates the compile context to reference the new position
@@ -54,6 +66,14 @@ def lvar_inner(compile_context: CompileContext, target): # target is address or 
 # abbreviation
 lvi = lvar_inner
 
+# Misc
+
+@macro_function(num_required_args=0, variadic=True)
+def rem(cc, a):
+    # Remark - a comment, deleted during compilation.
+    # Useful because you can use brainf characters inside it
+
+    return ''
 
 # Variables:
 
@@ -67,6 +87,7 @@ def dvar(cc, a):
 
     cc.variables[a[0]] = int(a[1])
     return ''
+
 @macro_function(3)
 def dvari(cc, a):
     # define variable with initialization - a0 is name, a1 is address, a2 is value
@@ -78,6 +99,23 @@ def lvar(cc, a):
     # Lookup variable called a0 and move the pointer to there
 
     return lvi(cc, a[0])
+
+@macro_function(2)
+def alias(cc, a):
+    # Alias variable a0 to equal a1. Useful for giving general-purpose registers a specific purpose for a certain block of code
+
+    cc.variables[a[0]] = read_var(cc, a[1])
+    return ''
+
+@macro_function(1)
+def rmalias(cc, a):
+    # Remove alias - delete the alias named a0
+
+    if a[0] in cc.variables:
+        del cc.variables[a[0]]
+    else:
+        raise ValueError(f'Cannot delete alias {a[0]}: it does not exist')
+    return ''
 
 # Memory pointer updating
 # Not actually moving the memory pointer, but updating the position of the pointer in the compiler's understanding

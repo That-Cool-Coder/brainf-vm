@@ -1,43 +1,324 @@
-prototyping implementation of the VM, ignoring the fact than an 8-bit VM is pretty pointless
+!rem 
 
-!dvari running 0 1!
-!dvar crnt_inst 1!
-!dvar crnt_inst_arg_1 2!
-!dvar crnt_inst_arg_2 3!
-!dvar program_pointer 4!
+Basic 8-bit implementation of the VM
+Yes, 8-bit is pretty useless. No, I don't care
+It's better to first implement the ram lookup now than 
 
-!dvar ra 5!
-!dvar rb 6!
-!dvar rc 7!
-!dvar rd 8!
+Program instruction initialization code should be put before the VM code in memory and should run such that instruction with index 0 is rightmost.
+These are the program instructions available:
 
-!dvar t0 4!
-!dvar t1 5!
+STATUS  CODE    NAME            EXPLICIT ARGUMENTS  DESCRIPTION
+testme  0       quit                                quit the program
+testme  1       zero reg        reg num             set a register to zero
+testme  2       set reg         reg num, value      set a register to a constant value
+        3       copy reg        reg a, reg b        copy a value from register a to register b
+        4       move reg        reg a, reg b        move a value from register a to register b, zeroing register a in the process
+testme  5       increment                           increment r0
+testme  6       decrement                           decrement r0
+testme  7       jump                                set program pointer to r0. Bad things will happen if this is out of bounds of the program. possible extra feature: check if it's out of bounds of the program
+testme  8       jump if                             jump to r1 if r0 is not zero
+testme  9       jump if not                         jump to r1 if r0 is zero
 
+(possible instruction statuses: done - it definitely works, testme - it's written but not tested, wip - partially written, empty space - not started)
+
+Explicit arguments to instructions are located where the next instruction would otherwise go.
+
+The following registers exist:
+0
+1
+2
+
+! (end rem)
+
+VARIABLES
+    INSTRUCTION READER MOVING BUFFER
+        these are the home positions  the moving buffer moves so it's not always at the home positions
+        !dvar irm_target_pos 0! this buffer is also used to return the fetched value
+        !dvar irm_return_pos 1!
+        !dvar irm_temp 2!
+
+    MISC INTERNAL VARS
+        !dvari running 3 1!
+        !dvar program_pointer 4!
+        !dvar instruction_register 5! holds current instruction
+        !dvar ireg0 6! internal registers  distinct from registers that the machine code interacts with
+        !dvar ireg1 7!
+        !dvar ireg2 8!
+        !dvar ireg3 9!
+        !dvar ireg4 10!
+        !dvar ireg5 11!
+        !dvar ireg6 12!
+        !dvar ireg7 13!
+        !dvar ireg8 14!
+        !dvar ireg9 15!
+        !dvar icopyreg 12! internal register specifically for holding copy temp values
+
+    REGISTERS
+        !dvar reg0 16!
+        !dvar reg1 17!
+        !dvar reg2 18!
+
+MAIN LOOP
 !loopz running!
-    todo: fetch the instruction into the register & read arg values
+    FETCH INSTRUCTION INTO INSTRUCTION REGISTER (needs test)
+        
+        CLEAR AND INIT MOVING BUFFER
+            !copy program_pointer irm_target_pos icopyreg!
+            !setl irm_return_pos 0!
 
-    SWITCH ON INSTRUCTION:
+        FETCHING VALUE
+            GO LEFT (TO TARGET)
+                !lvar irm_target_pos!
+                !movep 0!
+                [
+                    !swap -1 1 2! !swap 0 -1 2! !move 1 2! shift to left
+                    !movepl 1! set new cursor pos
+                    !lvar 1! + !lvar 0! - housekeeping and loop condition
+                ]
 
-    quit instruction
-    !copy crnt_inst t0 t1!
-    !ifz t0 t1!
-        !lvar running!-
-    !eifz t1!
-    !lvar crnt_inst! -
+            SAVE VALUE (we save it into irm_target_pos because it's not needed anymore)
+                !copy -1 0 2!
 
-    zero register
-    !copy crnt_inst t0 t1!
-    !ifz t0 t1!
-        !lvar running!-
-    !eifz t1!
-    !lvar crnt_inst! -
+            GO RIGHT (TO HOME)
+                !lvar irm_return_pos!
+                !movep 0!
+                [
+                    !swap -1 2 1! !swap 0 2 1! !move 2 1! shift to right
+                    !movepr 1! set new cursor pos
+                    !lvar 0! - housekeeping and loop condition
+                ]
 
-    constant to register
-    !copy crnt_inst t0 t1!
-    !ifz t0 t1!
+        RESET POINTER AND SAVE OBTAINED VALUE
+            !movep irm_return_pos! reset pointer
+            !copy irm_target_pos instruction_register icopyreg! 
 
-    !eifz t1!
-    !lvar crnt_inst! -
+
+
+    SWITCH ON INSTRUCTION 
+        ireg0 and ireg1 are used for the switch code so don't use them within instruction processing
+
+        !rem 
+        Here is a template for the switch code
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                YOUR_CODE_HERE
+                !lvar program_pointer!+ (might want this for incrementing the program pointer
+            !eifz ireg1!
+            !lvar instruction_register!-
+        ! (end rem)
+
+        CASE 0: QUIT
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                !setl running 0!
+            !eifz ireg1!
+            !lvar instruction_register!-
+        CASE 1: ZERO REG
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                !alias al_register_number ireg2!
+
+                FETCH NUMBER OF REGISTER FROM PROGRAM STORAGE
+                    !lvar program_pointer!+ increment program index because the stuff we need is part of the program text
+
+                    ESSENTIALLY COPIED FROM CPU INSTRUCTION FETCH
+                        CLEAR AND INIT MOVING BUFFER
+                            !copy program_pointer irm_target_pos icopyreg!
+                            !setl irm_return_pos 0!
+
+                        FETCHING VALUE
+                            GO LEFT (TO TARGET)
+                                !lvar irm_target_pos!
+                                !movep 0!
+                                [
+                                    !swap -1 1 2! !swap 0 -1 2! !move 1 2! shift to left
+                                    !movepl 1! set new cursor pos
+                                    !lvar 1! + !lvar 0! - housekeeping and loop condition
+                                ]
+
+                            SAVE VALUE (we save it into irm_target_pos because it's not needed anymore)
+                                !copy -1 0 2!
+
+                            GO RIGHT (TO HOME)
+                                !lvar irm_return_pos!
+                                !movep 0!
+                                [
+                                    !swap -1 2 1! !swap 0 2 1! !move 2 1! shift to right
+                                    !movepr 1! set new cursor pos
+                                    !lvar 0! - housekeeping and loop condition
+                                ]
+
+                        RESET POINTER AND SAVE OBTAINED VALUE
+                            !movep irm_return_pos! reset pointer
+                            !copy irm_target_pos al_register_number icopyreg! 
+
+                SWITCH ON REGISTER NUMBER
+                    CASE 0
+                    !copy al_register_number ireg3 icopyreg!
+                    !ifz ireg3 ireg4!
+                        !setl reg0 0!
+                    !eifz ireg4!
+                    !lvar ireg4!-
+
+                    CASE 1
+                    !copy al_register_number ireg3 icopyreg!
+                    !ifz ireg3 ireg4!
+                        !setl reg1 0!
+                    !eifz ireg4!
+                    !lvar ireg4!-
+
+                    CASE 2
+                    !copy al_register_number ireg3 icopyreg!
+                    !ifz ireg3 ireg4!
+                        !setl reg2 0!
+                    !eifz ireg4!
+                    !lvar ireg4!-
+
+                !lvar program_pointer!+
+                !rmalias al_register_number!
+            !eifz ireg1!
+            !lvar instruction_register!-
+        CASE 2: SET REG
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                !alias al_register_number ireg2!
+                !alias al_register_value ireg3!
+                FETCH NUMBER OF REGISTER FROM PROGRAM STORAGE
+                    !lvar program_pointer!+ increment program index because the stuff we need is part of the program text
+
+                    ESSENTIALLY COPIED FROM CPU INSTRUCTION FETCH
+                        CLEAR AND INIT MOVING BUFFER
+                            !copy program_pointer irm_target_pos icopyreg!
+                            !setl irm_return_pos 0!
+
+                        FETCHING VALUE
+                            GO LEFT (TO TARGET)
+                                !lvar irm_target_pos!
+                                !movep 0!
+                                [
+                                    !swap -1 1 2! !swap 0 -1 2! !move 1 2! shift to left
+                                    !movepl 1! set new cursor pos
+                                    !lvar 1! + !lvar 0! - housekeeping and loop condition
+                                ]
+
+                            SAVE VALUE (we save it into irm_target_pos because it's not needed anymore)
+                                !copy -1 0 2!
+
+                            GO RIGHT (TO HOME)
+                                !lvar irm_return_pos!
+                                !movep 0!
+                                [
+                                    !swap -1 2 1! !swap 0 2 1! !move 2 1! shift to right
+                                    !movepr 1! set new cursor pos
+                                    !lvar 0! - housekeeping and loop condition
+                                ]
+
+                        RESET POINTER AND SAVE OBTAINED VALUE
+                            !movep irm_return_pos! reset pointer
+                            !copy irm_target_pos al_register_number icopyreg! 
+
+                FETCH THE VALUE FROM PROGRAM STORAGE
+                    !lvar program_pointer!+ increment program index because the stuff we need is part of the program text
+
+                    ESSENTIALLY COPIED FROM CPU INSTRUCTION FETCH
+                        CLEAR AND INIT MOVING BUFFER
+                            !copy program_pointer irm_target_pos icopyreg!
+                            !setl irm_return_pos 0!
+
+                        FETCHING VALUE
+                            GO LEFT (TO TARGET)
+                                !lvar irm_target_pos!
+                                !movep 0!
+                                [
+                                    !swap -1 1 2! !swap 0 -1 2! !move 1 2! shift to left
+                                    !movepl 1! set new cursor pos
+                                    !lvar 1! + !lvar 0! - housekeeping and loop condition
+                                ]
+
+                            SAVE VALUE (we save it into irm_target_pos because it's not needed anymore)
+                                !copy -1 0 2!
+
+                            GO RIGHT (TO HOME)
+                                !lvar irm_return_pos!
+                                !movep 0!
+                                [
+                                    !swap -1 2 1! !swap 0 2 1! !move 2 1! shift to right
+                                    !movepr 1! set new cursor pos
+                                    !lvar 0! - housekeeping and loop condition
+                                ]
+
+                        RESET POINTER AND SAVE OBTAINED VALUE
+                            !movep irm_return_pos! reset pointer
+                            !copy irm_target_pos al_register_value icopyreg! 
+
+                SWITCH ON REGISTER NUMBER
+                    CASE 0
+                    !copy al_register_number ireg5 icopyreg!
+                    !ifz ireg5 ireg6!
+                        !copy al_register_value reg0 icopyreg!
+                    !eifz ireg6!
+                    !lvar ireg6!-
+
+                    CASE 1
+                    !copy al_register_number ireg5 icopyreg!
+                    !ifz ireg5 ireg6!
+                        !copy al_register_value reg1 icopyreg!
+                    !eifz ireg6!
+                    !lvar ireg6!-
+
+                    CASE 2
+                    !copy al_register_number ireg5 icopyreg!
+                    !ifz ireg5 ireg6!
+                        !copy al_register_value reg2 icopyreg!
+                    !eifz ireg6!
+                    !lvar ireg6!-
+
+                !lvar program_pointer!+
+            !eifz ireg1!
+            !lvar instruction_register!-
+        CASE 3: COPY REG (WRITE THIS)
+        CASE 4: MOVE REG (WRITE THIS)
+        CASE 5: INCREMENT
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                !lvar reg0!+
+                !lvar program_pointer!+
+            !eifz ireg1!
+            !lvar instruction_register!-
+        CASE 6: DECREMENT
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                !lvar reg0!-
+                !lvar program_pointer!+
+            !eifz ireg1!
+            !lvar instruction_register!-
+        CASE 7: JUMP
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                !copy reg0 program_pointer icopyreg!
+            !eifz ireg1!
+            !lvar instruction_register!-
     
+        CASE 8: JUMP IF
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                !lvar program_pointer!+ increment the pointer in the event that we don't jump
+                !copy reg0 ireg2 icopyreg!
+                !ifnz ireg2!
+                    !copy reg1 program_pointer icopyreg!
+                !eifnz ireg2!
+            !eifz ireg1!
+            !lvar instruction_register!-
+        CASE 9: JUMP IF NOT
+            !copy instruction_register ireg0 icopyreg!
+            !ifz ireg0 ireg1!
+                !lvar program_pointer!+ increment the pointer in the event that we don't jump
+                !copy reg0 ireg2 icopyreg!
+                !ifz ireg2 ireg3!
+                    !copy reg1 program_pointer icopyreg!
+                !eifz ireg3!
+            !eifz ireg1!
+            !lvar instruction_register!-
+    TEMPORARY THING TO QUIT AFTER ONE INSTRUCTION FOR TESTING
+        !setl running 0!
 !eloopz running!

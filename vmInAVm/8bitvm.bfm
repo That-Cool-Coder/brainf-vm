@@ -100,13 +100,13 @@ MAIN LOOP
         ireg0 and ireg1 are used for the switch code so don't use them within instruction processing
 
         !rem 
-        Here is a template for the switch code
-        !copy instruction_register ireg0 icopyreg!
-        CASE X: DESCRIPTION !ifz ireg0 ireg1!
+        Here is a template for the switch code (replace backslashes with exclamation marks)
+        \copy instruction_register ireg0 icopyreg\
+        CASE X: DESCRIPTION \ifz ireg0 ireg1\
             YOUR_CODE_HERE
-            !lvar program_pointer!+
-        !eifz ireg1!
-        !lvar instruction_register!-
+            \lvar program_pointer\+
+        \eifz ireg1\
+        \lvar instruction_register\-
         ! (end rem)
 
         
@@ -347,7 +347,7 @@ MAIN LOOP
 
                     RESET POINTER AND SAVE OBTAINED VALUE
                         !movep irm_return_pos! reset pointer
-                        !copy irm_target_pos destination_register_number icopyreg!
+                        !copy irm_target_pos al_destination_register_number icopyreg!
 
             
             COPY FROM SOURCE REGISTER TO TEMP: SWITCH ON SOURCE
@@ -468,7 +468,7 @@ MAIN LOOP
 
                     RESET POINTER AND SAVE OBTAINED VALUE
                         !movep irm_return_pos! reset pointer
-                        !copy irm_target_pos destination_register_number icopyreg!
+                        !copy irm_target_pos al_destination_register_number icopyreg!
 
             
             MOVE FROM SOURCE REGISTER TO TEMP: SWITCH ON SOURCE
@@ -574,5 +574,5 @@ MAIN LOOP
     END SWITCH ON INSTRUCTION
 
     TEMPORARY THING TO QUIT AFTER ONE INSTRUCTION FOR TESTING
-        !setl running 0!
+        
 !eloopz running!

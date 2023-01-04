@@ -23,3 +23,8 @@ DO STUFF
 - Groups of 3-4 macros related to doing the same thing can be put one after another on the same line to save space and give a better indication of structure
 - The `!rem!` macro is available for creating comments that may include brainf characters, do not feel compelled to always use it though
 - When using the `!alias!` macro, prefix the name of the aliased variable with `al_`.
+
+#### 8bitvm.bfm
+This is a prelimilary VM implementation supporting only 8-bit addresses. It's not very useful - for prototyping only. See the file for more detail.
+
+I've also created an assembly compiler for that vm - it simply converts human-readable textual representations of instructions into initialization code written in BrainF, then bundles it with the compiled vm.

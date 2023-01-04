@@ -8,6 +8,15 @@ import macros
 # Macros are started with an exclamation mark and ended by an exclamation mark.
 # Between the marks there comes the name of the macro, and the values passed to it (space separated)
 
+class CompilationException(Exception):
+    def __init__(self, msg, line_number):
+        self.msg = msg
+        self.line_number = line_number
+        super().__init__(msg)
+    
+    def __str__(self):
+        return f'{self.msg} (near line {self.line_number}'
+
 def compile_macros(macro_text, add_clear_char=False, optimise=True):
     sections = macro_text.split('!')
     result = ''
@@ -16,6 +25,7 @@ def compile_macros(macro_text, add_clear_char=False, optimise=True):
         result += '$'
 
     compile_context = macros.CompileContext()
+    approx_line_number = 0
     for idx, section in enumerate(sections):
         is_brainf = idx % 2 == 0
         if is_brainf:
@@ -24,9 +34,13 @@ def compile_macros(macro_text, add_clear_char=False, optimise=True):
             macro_args = section.split(' ')
             macro_name = macro_args.pop(0)
             if macro_name in macros.MACRO_COMPILERS:
-                result += macros.MACRO_COMPILERS[macro_name](compile_context, macro_args)
+                try:
+                    result += macros.MACRO_COMPILERS[macro_name](compile_context, macro_args)
+                except ValueError as e:
+                    raise CompilationException(str(e), approx_line_number)
             else:
-                raise ValueError(f'Macro {macro_name} does not exist')
+                raise CompilationException(f'Macro "{macro_name}" does not exist', approx_line_number)
+        approx_line_number += section.count('\n')
 
     if optimise:
         # First remove invalid chars
@@ -70,5 +84,5 @@ if __name__ == '__main__':
             result = compile_macros(in_file.read(), add_clear_char=args.clear, optimise=not args.large)
             with open(args.outfile, 'w+', encoding='utf-8') as out_file:
                 out_file.write(result)
-        except ValueError as e:
+        except CompilationException as e:
             print(f'Failed compiling: {e}')

@@ -2,13 +2,13 @@
 
 Basic 8-bit implementation of the VM
 Yes, 8-bit is pretty useless. No, I don't care
-It's better to first implement the ram lookup now than 
+It's better to first implement the ram lookup now 
 
 Program instruction initialization code should be put before the VM code in memory and should run such that instruction with index 0 is rightmost.
 These are the program instructions available:
 
 STATUS  CODE    NAME            EXPLICIT ARGUMENTS  DESCRIPTION
-testme  0       quit                                quit the program
+done    0       quit                                quit the program
 testme  1       zero reg        reg num             set a register to zero
 testme  2       set reg         reg num, value      set a register to a constant value
 testme  3       copy reg        reg a, reg b        copy a value from register a to register b
@@ -19,7 +19,7 @@ testme  7       jump                                set program pointer to value
 testme  8       jump if                             jump to value of r1 if r0 is not zero
 testme  9       jump if not                         jump to value of r1 if r0 is zero
 testme  10      getchar                             Get input into r0
-testme  11      putchar                             Output r0
+done    11      putchar                             Output r0
 
 (possible instruction statuses: done - it definitely works, testme - it's written but not tested, wip - partially written, empty space - not started)
 
@@ -272,6 +272,7 @@ MAIN LOOP
                 !lvar ireg6!-
             END SWITCH ON REGISTER NUMBER
             !lvar program_pointer!+
+            *
         !eifz ireg1!
         !lvar instruction_register!-
 
@@ -572,7 +573,4 @@ MAIN LOOP
         !eifz ireg1!
         !lvar instruction_register!-
     END SWITCH ON INSTRUCTION
-
-    TEMPORARY THING TO QUIT AFTER ONE INSTRUCTION FOR TESTING
-        
 !eloopz running!

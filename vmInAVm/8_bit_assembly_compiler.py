@@ -1,15 +1,16 @@
-# Assembly compiler for compiling to 8bitvm format.
+# Assembly compiler for compiling to 8bitvm format - see 8bitvm documentation for list of opcodes
 # Use ; for comments
+# It also supports the label command which creates a label for jumping to
 
 import argparse
 
-from _8_bit_assembly_instructions import INSTRUCTION_COMPILERS, CompileContext
+from _8_bit_assembly_instructions import INSTRUCTION_COMPILERS, CompileContext, NamedJumpPlaceholder
 
 def compile_assembly(assembly: str, vm_code: str, dump_machine_code=False):
     parsed_lines = parse_assembly(assembly)
 
     machine_code = []
-    compile_context = CompileContext()
+    compile_context = CompileContext(0)
     for line in parsed_lines:
         instruction_name = line[0]
         if instruction_name in INSTRUCTION_COMPILERS:
@@ -18,6 +19,14 @@ def compile_assembly(assembly: str, vm_code: str, dump_machine_code=False):
             raise ValueError(f'Unknown instruction: "{instruction_name}"')
 
     machine_code += [0] # make it quit at end - VM doesn't do this automatically
+
+    # Fill in named jumps
+    for idx, value in enumerate(machine_code):
+        if isinstance(value, NamedJumpPlaceholder):
+            if value.label_name in compile_context.named_jumps:
+                machine_code[idx] = compile_context.named_jumps[value.label_name]
+            else:
+                raise ValueError(f'Undefined label: {value.label_name}')
 
     # Instruction addresses are reversed in the VM
     if dump_machine_code:

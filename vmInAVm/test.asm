@@ -1,3 +1,4 @@
-set     0   4
-set     1   3
-add
+set     0   10
+set     1   4
+sub
+set     1   18

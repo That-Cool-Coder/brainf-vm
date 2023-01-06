@@ -56,3 +56,11 @@ def getchar(cc, a):
 @true_instruction(0)
 def putchar(cc, a):
     return [11]
+
+@true_instruction(0)
+def add(cc, a):
+    return [12]
+
+@true_instruction(0)
+def sub(cc, a):
+    return [13]

@@ -20,8 +20,8 @@ done    8       jump if                             jump to value of r1 if r0 is
 done    9       jump if not                         jump to value of r1 if r0 is zero
 testme  10      getchar                             Get input into r0
 done    11      putchar                             Output r0
-testme  12      add                                 Add r1 to r0. Result in r0, destructive on both
-testme  13      sub                                 Subtract r1 from r0. Result in r0, destructive on both.
+done    12      add                                 Add r1 to r0. Result in r0, destructive on both
+done    13      sub                                 Subtract r1 from r0. Result in r0, destructive on both.
 
 (possible instruction statuses: done - it definitely works, testme - it's written but not tested, wip - partially written, empty space - not started)
 
@@ -766,14 +766,14 @@ MAIN LOOP
         
         !copy instruction_register ireg0 icopyreg!
         CASE 12: ADD !ifz ireg0 ireg1!
-            !add r0 r1!
+            !add reg0 reg1!
             !lvar program_pointer!+
         !eifz ireg1!
         !lvar instruction_register!-
 
         !copy instruction_register ireg0 icopyreg!
         CASE 13: SUB !ifz ireg0 ireg1!
-            !sub r0 r1!
+            !sub reg0 reg1!
             !lvar program_pointer!+
         !eifz ireg1!
         !lvar instruction_register!-

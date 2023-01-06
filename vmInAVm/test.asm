@@ -1,6 +1,5 @@
 
-set         0   64
-set         1   65
-set         2   66
-copy        2   0
+set         0   22
+set         1   33
+set         2   44
 putchar

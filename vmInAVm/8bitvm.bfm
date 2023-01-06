@@ -159,19 +159,19 @@ MAIN LOOP
                 CASE 0 !ifz ireg3 ireg4!
                     !setl reg0 0!
                 !eifz ireg4!
-                !lvar ireg4!-
+                !lvar al_register_number!-
 
                 !copy al_register_number ireg3 icopyreg!
                 CASE 1 !ifz ireg3 ireg4!
                     !setl reg1 0!
                 !eifz ireg4!
-                !lvar ireg4!-
+                !lvar al_register_number!-
 
                 !copy al_register_number ireg3 icopyreg!
                 CASE 2 !ifz ireg3 ireg4!
                     !setl reg2 0!
                 !eifz ireg4!
-                !lvar ireg4!-
+                !lvar al_register_number!-
             END SWITCH ON REGISTER NUMBER
             !lvar program_pointer!+
             !rmalias al_register_number!
@@ -255,24 +255,23 @@ MAIN LOOP
                 CASE 0 !ifz ireg5 ireg6!
                     !copy al_register_value reg0 icopyreg!
                 !eifz ireg6!
-                !lvar ireg6!-
+                !lvar al_register_number!-
 
                 
                 !copy al_register_number ireg5 icopyreg!
                 CASE 1 !ifz ireg5 ireg6!
                     !copy al_register_value reg1 icopyreg!
                 !eifz ireg6!
-                !lvar ireg6!-
+                !lvar al_register_number!-
 
                 
                 !copy al_register_number ireg5 icopyreg!
                 CASE 2 !ifz ireg5 ireg6!
                     !copy al_register_value reg2 icopyreg!
                 !eifz ireg6!
-                !lvar ireg6!-
+                !lvar al_register_number!-
             END SWITCH ON REGISTER NUMBER
             !lvar program_pointer!+
-            *
         !eifz ireg1!
         !lvar instruction_register!-
 

@@ -29,6 +29,13 @@ The following registers exist:
 0
 1
 2
+3
+4
+5
+6
+7
+
+(I should really add RAM so you don't have to use registers for everything)
 
 ! (end rem)
 
@@ -59,6 +66,11 @@ VARIABLES
         !dvar reg0 16!
         !dvar reg1 17!
         !dvar reg2 18!
+        !dvar reg3 19!
+        !dvar reg4 20!
+        !dvar reg5 21!
+        !dvar reg6 22!
+        !dvar reg7 23!
 
 MAIN LOOP
 !loopz running!
@@ -172,6 +184,36 @@ MAIN LOOP
                     !setl reg2 0!
                 !eifz ireg4!
                 !lvar al_register_number!-
+
+                !copy al_register_number ireg3 icopyreg!
+                CASE 2 !ifz ireg3 ireg4!
+                    !setl reg3 0!
+                !eifz ireg4!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg3 icopyreg!
+                CASE 2 !ifz ireg3 ireg4!
+                    !setl reg4 0!
+                !eifz ireg4!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg3 icopyreg!
+                CASE 2 !ifz ireg3 ireg4!
+                    !setl reg5 0!
+                !eifz ireg4!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg3 icopyreg!
+                CASE 2 !ifz ireg3 ireg4!
+                    !setl reg6 0!
+                !eifz ireg4!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg3 icopyreg!
+                CASE 2 !ifz ireg3 ireg4!
+                    !setl reg7 0!
+                !eifz ireg4!
+                !lvar al_register_number!-
             END SWITCH ON REGISTER NUMBER
             !lvar program_pointer!+
             !rmalias al_register_number!
@@ -257,17 +299,45 @@ MAIN LOOP
                 !eifz ireg6!
                 !lvar al_register_number!-
 
-                
                 !copy al_register_number ireg5 icopyreg!
                 CASE 1 !ifz ireg5 ireg6!
                     !copy al_register_value reg1 icopyreg!
                 !eifz ireg6!
                 !lvar al_register_number!-
 
-                
                 !copy al_register_number ireg5 icopyreg!
                 CASE 2 !ifz ireg5 ireg6!
                     !copy al_register_value reg2 icopyreg!
+                !eifz ireg6!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy al_register_value reg3 icopyreg!
+                !eifz ireg6!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy al_register_value reg4 icopyreg!
+                !eifz ireg6!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy al_register_value reg5 icopyreg!
+                !eifz ireg6!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy al_register_value reg6 icopyreg!
+                !eifz ireg6!
+                !lvar al_register_number!-
+
+                !copy al_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy al_register_value reg7 icopyreg!
                 !eifz ireg6!
                 !lvar al_register_number!-
             END SWITCH ON REGISTER NUMBER
@@ -368,6 +438,36 @@ MAIN LOOP
                     !copy reg2 al_temp_iregister icopyreg!
                 !eifz ireg6!
                 !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy reg3 al_temp_iregister icopyreg!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy reg4 al_temp_iregister icopyreg!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy reg5 al_temp_iregister icopyreg!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy reg6 al_temp_iregister icopyreg!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !copy reg7 al_temp_iregister icopyreg!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
             END SWITCH ON SOURCE
             MOVE FROM TEMP TO DESTINATION REGISTER: SWITCH ON DESTINATION
                 !copy al_destination_register_number ireg5 icopyreg!
@@ -387,6 +487,36 @@ MAIN LOOP
                     !move al_temp_iregister reg2!
                 !eifz ireg6!
                 !lvar al_destination_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg3!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg4!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg5!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg6!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg7!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
             END SWITCH ON DESTINATION
 
             !lvar program_pointer!+
@@ -489,6 +619,36 @@ MAIN LOOP
                     !move reg2 al_temp_iregister!
                 !eifz ireg6!
                 !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move reg3 al_temp_iregister!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move reg4 al_temp_iregister!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move reg5 al_temp_iregister!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move reg6 al_temp_iregister!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move reg7 al_temp_iregister!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
             END SWITCH ON SOURCE
 
             MOVE FROM TEMP TO DESTINATION REGISTER: SWITCH ON DESTINATION
@@ -509,6 +669,36 @@ MAIN LOOP
                     !move al_temp_iregister reg2!
                 !eifz ireg6!
                 !lvar al_destination_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg3!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg4!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg5!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg6!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
+
+                !copy al_source_register_number ireg5 icopyreg!
+                CASE 2 !ifz ireg5 ireg6!
+                    !move al_temp_iregister reg7!
+                !eifz ireg6!
+                !lvar al_source_register_number!-
             END SWITCH ON DESTINATION
 
             !lvar program_pointer!+

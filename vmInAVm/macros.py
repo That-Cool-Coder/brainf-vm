@@ -119,7 +119,7 @@ def rmalias(cc, a):
 
 # Memory pointer updating
 # Not actually moving the memory pointer, but updating the position of the pointer in the compiler's understanding
-# Intended to be used after performing unsafe operations through manual BF
+# Intended to be used after or during performing unsafe operations through manual BF
 
 @macro_function(1)
 def movep(cc, a):

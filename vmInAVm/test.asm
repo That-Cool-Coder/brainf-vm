@@ -1,3 +1,3 @@
-set 0 65
-set 1 66
-set 2 67
+set     0   4
+set     1   3
+add

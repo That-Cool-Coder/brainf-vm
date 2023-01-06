@@ -9,17 +9,19 @@ These are the program instructions available:
 
 STATUS  CODE    NAME            EXPLICIT ARGUMENTS  DESCRIPTION
 done    0       quit                                quit the program
-testme  1       zero reg        reg num             set a register to zero
-testme  2       set reg         reg num, value      set a register to a constant value
-testme  3       copy reg        reg a, reg b        copy a value from register a to register b
-testme  4       move reg        reg a, reg b        move a value from register a to register b, zeroing register a in the process
-testme  5       increment                           increment r0
-testme  6       decrement                           decrement r0
-testme  7       jump                                set program pointer to value of r0. Bad things will happen if this is out of bounds of the program. possible extra feature: check if it's out of bounds of the program
-testme  8       jump if                             jump to value of r1 if r0 is not zero
-testme  9       jump if not                         jump to value of r1 if r0 is zero
+done    1       zero reg        reg num             set a register to zero
+done    2       set reg         reg num, value      set a register to a constant value
+done    3       copy reg        reg a, reg b        copy a value from register a to register b
+done    4       move reg        reg a, reg b        move a value from register a to register b, zeroing register a in the process
+done    5       increment                           increment r0
+done    6       decrement                           decrement r0
+done    7       jump                                set program pointer to value of r0. Bad things will happen if this is out of bounds of the program. possible extra feature: check if it's out of bounds of the program
+done    8       jump if                             jump to value of r1 if r0 is not zero
+done    9       jump if not                         jump to value of r1 if r0 is zero
 testme  10      getchar                             Get input into r0
 done    11      putchar                             Output r0
+testme  12      add                                 Add r1 to r0. Result in r0, destructive on both
+testme  13      sub                                 Subtract r1 from r0. Result in r0, destructive on both.
 
 (possible instruction statuses: done - it definitely works, testme - it's written but not tested, wip - partially written, empty space - not started)
 
@@ -758,6 +760,20 @@ MAIN LOOP
         !copy instruction_register ireg0 icopyreg!
         CASE 11: PUTCHAR !ifz ireg0 ireg1!
             !lvar reg0!.
+            !lvar program_pointer!+
+        !eifz ireg1!
+        !lvar instruction_register!-
+        
+        !copy instruction_register ireg0 icopyreg!
+        CASE 12: ADD !ifz ireg0 ireg1!
+            !add r0 r1!
+            !lvar program_pointer!+
+        !eifz ireg1!
+        !lvar instruction_register!-
+
+        !copy instruction_register ireg0 icopyreg!
+        CASE 13: SUB !ifz ireg0 ireg1!
+            !sub r0 r1!
             !lvar program_pointer!+
         !eifz ireg1!
         !lvar instruction_register!-

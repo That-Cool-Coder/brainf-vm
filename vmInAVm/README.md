@@ -27,4 +27,4 @@ DO STUFF
 #### 8bitvm.bfm
 This is a prelimilary VM implementation supporting only 8-bit addresses. It's not very useful - for prototyping only. See the file for more detail.
 
-I've also created an assembly compiler for that vm - it simply converts human-readable textual representations of instructions into initialization code written in BrainF, then bundles it with the compiled vm.
+I've also created an assembly compiler for that vm - it simply converts human-readable textual representations of instructions into initialization code written in BrainF, then bundles it with the compiled vm. See the `x_instructions` files and `main.py` in that directory for documentation on the available instructions and required format.

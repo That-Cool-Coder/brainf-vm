@@ -1,10 +1,18 @@
 # Assembly compiler for compiling to 8bitvm format - see 8bitvm documentation for list of opcodes
-# Use ; for comments
-# It also supports the label command which creates a label for jumping to
+# Everything after a semicolon is a comment and is ignored
+# One command per line, arguments to commands are separated by spaces, EG:
+# foo       a   b
+# bar      
+# baz       e   q ; frobnicate the turbo-encabulator
+# quux      5   10  t
 
 import argparse
 
-from _8_bit_assembly_instructions import INSTRUCTION_COMPILERS, CompileContext, NamedJumpPlaceholder
+from instructions_common import CompileContext, NamedJumpPlaceholder
+from true_instructions import TRUE_INSTRUCTIONS
+from virtual_instructions import VIRTUAL_INSTRUCTIONS
+
+ALL_INSTRUCTIONS = {**TRUE_INSTRUCTIONS, **VIRTUAL_INSTRUCTIONS}
 
 def compile_assembly(assembly: str, vm_code: str, dump_machine_code=False):
     parsed_lines = parse_assembly(assembly)
@@ -13,8 +21,8 @@ def compile_assembly(assembly: str, vm_code: str, dump_machine_code=False):
     compile_context = CompileContext(0)
     for line in parsed_lines:
         instruction_name = line[0]
-        if instruction_name in INSTRUCTION_COMPILERS:
-            machine_code += INSTRUCTION_COMPILERS[instruction_name](compile_context, line[1:])
+        if instruction_name in ALL_INSTRUCTIONS:
+            machine_code += ALL_INSTRUCTIONS[instruction_name](compile_context, line[1:])
         else:
             raise ValueError(f'Unknown instruction: "{instruction_name}"')
 
@@ -31,6 +39,9 @@ def compile_assembly(assembly: str, vm_code: str, dump_machine_code=False):
     # Instruction addresses are reversed in the VM
     if dump_machine_code:
         print(machine_code)
+    
+    if len(machine_code) > 255:
+        raise ValueError(f'Machine code is too long (max 255, {len(machine_code)} provided)')
 
     machine_code.reverse()
 

@@ -126,7 +126,8 @@ class Terminal {
             this.write(command + '\r\n');
             this.historyIndexFromEnd = 0;
             this.inputHistory.push(command);
-            await this.virtualMachine.run(command);
+            var stats = await this.virtualMachine.run(command);
+            this._printExecutionInfo(stats);
 
             // Pause for a brief moment to stop a getline also registering as a submit
             setTimeout(() => {
@@ -275,5 +276,10 @@ class Terminal {
 
     _updateOutputHolder() {
         this.outputHolder.innerText = this.content.join('\n');
+    }
+
+    _printExecutionInfo(executionInfo) {
+        this.write(`\r\nExecution finished in ${executionInfo.executionDuration}ms\r\n` + 
+            `Executed ${executionInfo.numInstructionsExecuted} instructions (${Math.floor(executionInfo.instructionsPerSecond)} instructions/second)\r\n`)
     }
 }

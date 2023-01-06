@@ -49,6 +49,9 @@ class VirtualMachine {
 
         this.inputBuffer = ''; // thing to hold input
 
+        var executionInfo = new VirtualMachineExecutionInfo();
+        executionInfo.startRun();
+
         while (this.programIndex < this.crntProgram.length && ! this.hasCrashed) {
             switch(this.crntProgram[this.programIndex]) {
                 case '<':
@@ -94,13 +97,18 @@ class VirtualMachine {
                 
             }
             this.programIndex ++;
+            executionInfo.instructionExecuted();
         }
+        executionInfo.finishRun();
+
         if (this.hasCrashed) {
             this.putTextFunc(this.crashMessage);
         }
         if (this.autosaveMemory) {
             this.saveMemory();
         }
+
+        return executionInfo;
     }
 
     handleSquareBracket() {
@@ -154,5 +162,27 @@ class VirtualMachine {
             // Then we need to add because this takes one too many
             this.programIndex ++;
         }
+    }
+}
+
+class VirtualMachineExecutionInfo {
+    // Thing providing stats on execution of the VM
+
+    constructor() {
+        this.numInstructionsExecuted = 0;
+    }
+
+    startRun() {
+        this.startedTime = new Date();
+    }
+
+    finishRun() {
+        this.finishedTime = new Date();
+        this.executionDuration = this.finishedTime - this.startedTime;
+        this.instructionsPerSecond = this.numInstructionsExecuted / this.executionDuration * 1000;
+    }
+
+    instructionExecuted() {
+        this.numInstructionsExecuted ++;
     }
 }

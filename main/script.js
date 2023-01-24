@@ -4,6 +4,7 @@ var machine = new SwitchableVirtualMachine('machine', 500,
     async () => {
         while ((charCode = await terminal.getChar()) == null);
         return charCode;
-    }, x => terminal.write(x), true, true);
+    }, x => terminal.write(x), true, false);
+machine.usingJit = true;
 terminal.linkVirtualMachine(machine);
 //machine.loadMemory();

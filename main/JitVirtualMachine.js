@@ -16,14 +16,29 @@ class JitVirtualMachine extends AbstractVirtualMachine {
         functionBody += 'var o = () => {var d = String.fromCharCode(m[i]); if (d == " ") d = " "; v.putTextFunc(d);};'; // shortcut to generate and output char
 
         var onInstructionExecuted = createExecutionInfo ? 'l();' : '';
-        for (var char of program) {
+        function onMultipleInstructionsExecuted(num) {
+            return onInstructionExecuted.repeat(num - 1);
+        }
+
+        for (var charIdx = 0; charIdx < program.length; charIdx ++) {
             var validChar = true;
+            var char = program[charIdx];
             switch (char) {
                 case '<':
-                    functionBody += 'i--;';
+                    var count = 1;
+                    while (program[charIdx + 1] == '<') {
+                        count ++;
+                        charIdx ++;
+                    }
+                    functionBody += `i -= ${count};` + onMultipleInstructionsExecuted(count);
                     break;
                 case '>':
-                    functionBody += 'i++;';
+                    var count = 1;
+                    while (program[charIdx + 1] == '>') {
+                        count ++;
+                        charIdx ++;
+                    }
+                    functionBody += `i += ${count};` + onMultipleInstructionsExecuted(count);
                     break;
                 case '-':
                     functionBody += 'm[i]--;';
@@ -38,6 +53,11 @@ class JitVirtualMachine extends AbstractVirtualMachine {
                     functionBody += 'o();';
                     break;
                 case '[':
+                    if (program[charIdx + 1] == '-' && program[charIdx + 2] == ']') {
+                        functionBody += 'm[i] = 0;' + onMultipleInstructionsExecuted(2);
+                        charIdx += 2;
+                        break;
+                    }
                     functionBody += 'while (m[i] != 0) {';
                     break;
                 case ']':
@@ -64,8 +84,8 @@ class JitVirtualMachine extends AbstractVirtualMachine {
 
     async run(program) {
         var executionInfo = new VirtualMachineExecutionInfo();
-        var func = this.jit(program, this.fillExecutionInfo);
         executionInfo.startRun();
+        var func = this.jit(program, this.fillExecutionInfo);
         await func(this, executionInfo);
         executionInfo.finishRun();
 

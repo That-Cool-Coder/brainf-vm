@@ -3,6 +3,9 @@ class JitVirtualMachine extends AbstractVirtualMachine {
 
     constructor(name, memorySize, getCharFunc=null, putTextFunc=null, autosaveMemory=false) {
         super(name, memorySize, getCharFunc, putTextFunc, autosaveMemory);
+
+        async function a() {};
+        this.AsyncFunction = a.constructor;
     }
 
     jit(program) {
@@ -12,11 +15,12 @@ class JitVirtualMachine extends AbstractVirtualMachine {
         // x = executionInfo v = virtual machine. m = memory array. i = index.
 
         var functionBody = 'var v = virtualMachine; var m = v.memory; var i = 0;';
-        functionBody += 'var o = () => {var d = String.fromCharCode(m[i]); if (d == " ") d = " "; v.putTextFunc(d);};'; // shortcut to generate and output char
+        functionBody += 'var o = () => {v.putTextFunc(String.fromCharCode(m[i]));};'; // shortcut to generate and output char
 
         var deterministicChars = '+-<>'; // chars that can be pre-computed during compilation, which is really great for code that goes in busy loops.
 
-        for (var charIdx = 0; charIdx < program.length; charIdx ++) {
+        var l = program.length;
+        for (var charIdx = 0; charIdx < l; charIdx ++) {
             var char = program[charIdx];
             if (deterministicChars.includes(char)) {
                 var pointer = 0;
@@ -56,10 +60,7 @@ class JitVirtualMachine extends AbstractVirtualMachine {
             else if (char == this.clearMemorySymbol) functionBody += 'i = 0; m.fill(0);';
         }
 
-        async function a() {};
-        var AsyncFunction = a.constructor;
-
-        return AsyncFunction('virtualMachine', functionBody);
+        return this.AsyncFunction('virtualMachine', functionBody);
     }
     async run(program) {
         var executionInfo = new VirtualMachineExecutionInfo();

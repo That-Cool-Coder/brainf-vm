@@ -53,7 +53,7 @@ class JitVirtualMachine extends AbstractVirtualMachine {
                     functionBody += 'o();';
                     break;
                 case '[':
-                    if (program[charIdx + 1] == '-' && program[charIdx + 2] == ']') {
+                    if ('+-'.includes(program[charIdx + 1]) && program[charIdx + 2] == ']') {
                         functionBody += 'm[i] = 0;' + onMultipleInstructionsExecuted(2);
                         charIdx += 2;
                         break;

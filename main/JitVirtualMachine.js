@@ -1,92 +1,71 @@
 class JitVirtualMachine extends AbstractVirtualMachine {
     // Faster but less safe in event of memory breaches, etc
 
-    constructor(name, memorySize, getCharFunc=null, putTextFunc=null, autosaveMemory=false, fillExecutionInfo=false) {
+    constructor(name, memorySize, getCharFunc=null, putTextFunc=null, autosaveMemory=false) {
         super(name, memorySize, getCharFunc, putTextFunc, autosaveMemory);
-        this.fillExecutionInfo = fillExecutionInfo;
     }
 
-    jit(program, createExecutionInfo=false) {
+    jit(program) {
         // JIT-compile a program to a JS function
 
         // shortened variable names are used to minimise memory footprint when generating
         // x = executionInfo v = virtual machine. m = memory array. i = index.
 
-        var functionBody = 'var x = executionInfo; var l = x.instructionExecuted.bind(x); var v = virtualMachine; var m = v.memory; var i = 0;';
+        var functionBody = 'var v = virtualMachine; var m = v.memory; var i = 0;';
         functionBody += 'var o = () => {var d = String.fromCharCode(m[i]); if (d == " ") d = " "; v.putTextFunc(d);};'; // shortcut to generate and output char
 
-        var onInstructionExecuted = createExecutionInfo ? 'l();' : '';
-        function onMultipleInstructionsExecuted(num) {
-            return onInstructionExecuted.repeat(num - 1);
-        }
+        var deterministicChars = '+-<>'; // chars that can be pre-computed during compilation, which is really great for code that goes in busy loops.
 
         for (var charIdx = 0; charIdx < program.length; charIdx ++) {
-            var validChar = true;
             var char = program[charIdx];
-            switch (char) {
-                case '<':
-                    var count = 1;
-                    while (program[charIdx + 1] == '<') {
-                        count ++;
-                        charIdx ++;
-                    }
-                    functionBody += `i -= ${count};` + onMultipleInstructionsExecuted(count);
-                    break;
-                case '>':
-                    var count = 1;
-                    while (program[charIdx + 1] == '>') {
-                        count ++;
-                        charIdx ++;
-                    }
-                    functionBody += `i += ${count};` + onMultipleInstructionsExecuted(count);
-                    break;
-                case '-':
-                    functionBody += 'm[i]--;';
-                    break;
-                case '+':
-                    functionBody += 'm[i]++;';
-                    break;
-                case ',':
-                    functionBody += 'm[i] = await v.getCharFunc();';
-                    break;
-                case '.':
-                    functionBody += 'o();';
-                    break;
-                case '[':
-                    if ('+-'.includes(program[charIdx + 1]) && program[charIdx + 2] == ']') {
-                        functionBody += 'm[i] = 0;' + onMultipleInstructionsExecuted(2);
-                        charIdx += 2;
-                        break;
-                    }
-                    functionBody += 'while (m[i] != 0) {';
-                    break;
-                case ']':
-                    functionBody += '}';
-                    break;
-                case this.debugSymbol:
-                    functionBody += 'v.handleDebugSymbol(i);';
-                    break;
-                case this.clearMemorySymbol:
-                    functionBody += 'i = 0; m.fill(0);';
-                    break;
-                default:
-                    validChar = false;
-                    break;
+            if (deterministicChars.includes(char)) {
+                var pointer = 0;
+                var deltas = {};
+                while (deterministicChars.includes(program[charIdx])) {
+                    var char = program[charIdx];
+                    if (char == '<') pointer --;       
+                    if (char == '>') pointer ++;
+                    if (char == '-') deltas[pointer] = (deltas[pointer] || 0) - 1;
+                    if (char == '+') deltas[pointer] = (deltas[pointer] || 0) + 1;
+                    charIdx ++;
+                }
+
+                charIdx --;
+
+                for (var relativePointer in deltas) {
+                    var firstHalf = relativePointer == 0 ? 'm[i]' : `m[i + ${relativePointer}]`;
+                    functionBody += firstHalf + '+=' + deltas[relativePointer] + ';';
+                }
+
+                if (pointer != 0) functionBody += `i += ${pointer};`;
             }
-            if (validChar) functionBody += onInstructionExecuted;
+            else if (char == '[') {
+                if ('+-'.includes(program[charIdx + 1]) && program[charIdx + 2] == ']') {
+                    functionBody += 'm[i] = 0;';
+                    charIdx += 2;
+                }
+                else {
+                    functionBody += 'while (m[i]) {';
+                }
+            }
+
+            else if (char == ']') functionBody += '}';
+            else if (char == ',') functionBody += 'm[i] = await v.getCharFunc();';
+            else if (char == '.') functionBody += 'o();';
+            else if (char == this.debugSymbol) functionBody += 'v.handleDebugSymbol(i);';
+            else if (char == this.clearMemorySymbol) functionBody += 'i = 0; m.fill(0);';
         }
 
         async function a() {};
         var AsyncFunction = a.constructor;
 
-        return AsyncFunction('virtualMachine', 'executionInfo', functionBody);
+        return AsyncFunction('virtualMachine', functionBody);
     }
-
     async run(program) {
         var executionInfo = new VirtualMachineExecutionInfo();
         executionInfo.startRun();
-        var func = this.jit(program, this.fillExecutionInfo);
-        await func(this, executionInfo);
+        var func = this.jit(program);
+        await func(this);
         executionInfo.finishRun();
 
         if (this.autosaveMemory) {
@@ -95,4 +74,36 @@ class JitVirtualMachine extends AbstractVirtualMachine {
 
         return executionInfo;
     }
+}
+
+class JitCommand {
+    // abstract class I guess
+}
+
+class PointerMoveCommand extends JitCommand {
+    constructor(delta) {
+        this.delta = delta;
+    }
+}
+
+class AddCommand extends JitCommand {
+    constructor(delta) {
+        this.delta = delta;
+    }
+}
+
+class StartLoopCommand extends JitCommand {
+
+}
+
+class EndLoopCommand extends JitCommand {
+    
+}
+
+class InputCommand extends JitCommand {
+    
+}
+
+class OutputCommand extends JitCommand {
+    
 }

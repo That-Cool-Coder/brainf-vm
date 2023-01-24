@@ -2,8 +2,8 @@ class SwitchableVirtualMachine {
     // Thing that looks like a VM to the terminal, so we can switch between the two easily.
     // Probably doesn't work well with load/save memory
 
-    constructor(name, memorySize, getCharFunc=null, putTextFunc=null, autosaveMemory=false, fillExecutionInfo=false) {
-        this.jitVm = new JitVirtualMachine(name, memorySize, getCharFunc, putTextFunc, autosaveMemory, fillExecutionInfo);
+    constructor(name, memorySize, getCharFunc=null, putTextFunc=null, autosaveMemory=false) {
+        this.jitVm = new JitVirtualMachine(name, memorySize, getCharFunc, putTextFunc, autosaveMemory);
         this.basicVm = new BasicVirtualMachine(name, memorySize, getCharFunc, putTextFunc, autosaveMemory);
 
         this.basicVm.memory = this.jitVm.memory;

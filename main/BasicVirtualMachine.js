@@ -1,45 +1,13 @@
-class VirtualMachine {
-    // This is a virtual machine class
-    // It's 'machine code' is modified BrainF***
-
-    // It runs slightly differently fron normaly BrainF because
-    // the , function waits for a key press and writes it to memory
-
-    // We also have the $ symbol to clear memory and * to dump it, but these don't do anything except help debugging
+class BasicVirtualMachine extends AbstractVirtualMachine {
+    // Slow but friendly virtual machine that is useful for prototyping
 
     constructor(name, memorySize, getCharFunc=null, putTextFunc=null, autosaveMemory=false) {
-        this.name = name;
-        this.memory = new Uint8Array(memorySize);
-        
-        this.getCharFunc = getCharFunc || (x => prompt(x));
-        this.putTextFunc = putTextFunc || (x => console.log(x));
-        this.autosaveMemory = autosaveMemory;
+        super(name, memorySize, getCharFunc, putTextFunc, autosaveMemory);
 
         this.crntProgram = null;
         this.programIndex = 0;
         this.hasCrashed = false;
         this.memPointer = 0;
-        
-        this.debugSymbol = '*'; // if this symbol is found in the bf, then dump memory to terminal
-        this.clearMemorySymbol = '$'; // if this symbol is found in the bf, then clear memory
-        this.crashMessage = 'Virtual machine crashed during execution. Check that it has enough memory.';
-    }
-
-    saveMemory() {
-        // JSON doesn't like Uint8Arrays, so we convert it to regular array
-        var localStorageKey = `${this.name}_vm_memory`;
-        var memAsArray = [].slice.call(this.memory);
-        localStorage.setItem(localStorageKey, JSON.stringify(memAsArray));
-    }
-
-    loadMemory() {
-        var localStorageKey = `${this.name}_vm_memory`;
-        if (localStorage.getItem(localStorageKey)) {
-            // The memory is saved as a regular array (not Uint8Array),
-            // so we need to convert it
-            var memAsArray = JSON.parse(localStorage.getItem(localStorageKey));
-            this.memory = new Uint8Array(memAsArray);
-        }
     }
 
     async run(program) {
@@ -84,11 +52,7 @@ class VirtualMachine {
                     this.handleSquareBracket();
                     break;
                 case this.debugSymbol:
-                    var memory = new Array(...this.memory);
-                    while(memory[memory.length-1] === 0) memory.pop(); // remove trailing zeroes
-                    var memoryText = memory.length > 0 ? memory.toString() : '(all zeroes)';
-                    this.putTextFunc(
-                        `Mem pointer: ${this.memPointer} Memory: ${memoryText}\r\n`);
+                    this.handleDebugSymbol(this.memPointer);
                     break;
                 case this.clearMemorySymbol:
                     this.memory.fill(0);
@@ -104,9 +68,7 @@ class VirtualMachine {
         if (this.hasCrashed) {
             this.putTextFunc(this.crashMessage);
         }
-        if (this.autosaveMemory) {
-            this.saveMemory();
-        }
+        this.handleAutoSave();
 
         return executionInfo;
     }
@@ -162,27 +124,5 @@ class VirtualMachine {
             // Then we need to add because this takes one too many
             this.programIndex ++;
         }
-    }
-}
-
-class VirtualMachineExecutionInfo {
-    // Thing providing stats on execution of the VM
-
-    constructor() {
-        this.numInstructionsExecuted = 0;
-    }
-
-    startRun() {
-        this.startedTime = new Date();
-    }
-
-    finishRun() {
-        this.finishedTime = new Date();
-        this.executionDuration = this.finishedTime - this.startedTime;
-        this.instructionsPerSecond = this.numInstructionsExecuted / this.executionDuration * 1000;
-    }
-
-    instructionExecuted() {
-        this.numInstructionsExecuted ++;
     }
 }
